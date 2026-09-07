@@ -6,10 +6,9 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { useDailyLogs } from '@/hooks/useDailyLogs'
 import { useWorkoutLogs } from '@/hooks/useWorkoutLogs'
-import { useProfile } from '@/hooks/useProfile'
 import type { MealType, WorkoutType } from '@/types/database'
 
-const TABS = ['Alimentação', 'Água', 'Café', 'Treino'] as const
+const TABS = ['Alimentação', 'Treino'] as const
 type Tab = (typeof TABS)[number]
 
 const MEAL_OPTIONS: { value: MealType; label: string }[] = [
@@ -42,9 +41,11 @@ export function QuickLogPage() {
         ))}
       </div>
 
+      <p className="text-sm text-muted-foreground">
+        Dica: registre água e café rapidamente na tela de Início.
+      </p>
+
       {tab === 'Alimentação' && <FoodForm />}
-      {tab === 'Água' && <WaterForm />}
-      {tab === 'Café' && <CoffeeForm />}
       {tab === 'Treino' && <WorkoutForm />}
     </div>
   )
@@ -124,39 +125,6 @@ function FoodForm() {
           </Button>
           {saved && <p className="text-sm text-muted-foreground">Registrado!</p>}
         </form>
-      </CardContent>
-    </Card>
-  )
-}
-
-function WaterForm() {
-  const { addWaterLog, totalWaterMl } = useDailyLogs()
-  const { profile } = useProfile()
-  const glassSize = profile?.glass_size_ml ?? 250
-
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 pt-6">
-        <p className="text-sm text-muted-foreground">Hoje: {totalWaterMl} ml</p>
-        <div className="flex gap-3">
-          <Button onClick={() => addWaterLog(glassSize)}>+1 copo ({glassSize} ml)</Button>
-          <Button variant="outline" onClick={() => addWaterLog(500)}>
-            +500 ml
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function CoffeeForm() {
-  const { addCoffeeLog, totalCoffee } = useDailyLogs()
-
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 pt-6">
-        <p className="text-sm text-muted-foreground">Hoje: {totalCoffee} xícaras</p>
-        <Button onClick={() => addCoffeeLog(1, 'cups')}>+1 xícara de café</Button>
       </CardContent>
     </Card>
   )

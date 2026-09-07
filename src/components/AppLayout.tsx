@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ClipboardList, Home, LineChart, User, Dumbbell } from 'lucide-react'
+import { ClipboardList, Home, LineChart, User, Dumbbell, Leaf } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -12,8 +12,11 @@ const NAV_ITEMS = [
 
 export function AppLayout() {
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col pb-20">
-      <header className="border-b border-border px-4 py-4">
+    <div className="mx-auto flex min-h-screen max-w-3xl flex-col bg-muted/40 pb-24">
+      <header className="flex items-center gap-2 bg-card px-4 py-4 shadow-sm">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Leaf className="h-4 w-4" />
+        </span>
         <h1 className="text-lg font-semibold text-primary">MISO4Life</h1>
       </header>
 
@@ -21,7 +24,7 @@ export function AppLayout() {
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto flex max-w-3xl border-t border-border bg-card">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto flex max-w-3xl gap-1 border-t border-border bg-card/95 px-2 py-2 backdrop-blur">
         {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -29,8 +32,8 @@ export function AppLayout() {
             end={end}
             className={({ isActive }) =>
               cn(
-                'flex flex-1 flex-col items-center gap-1 py-2 text-xs text-muted-foreground',
-                isActive && 'text-primary',
+                'flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-muted-foreground transition-colors',
+                isActive && 'bg-secondary font-medium text-primary',
               )
             }
           >
