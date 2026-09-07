@@ -1,0 +1,28 @@
+name: Manter Supabase ativo (miso4life)
+
+# Projetos Supabase no plano free pausam depois de ~7 dias sem atividade de
+# API. Esse workflow faz uma leitura simples e barata (health check do Auth)
+# todo dia, só pra contar como atividade e evitar a pausa automática.
+#
+# A anon key abaixo NÃO é um segredo — é a mesma chave pública já embutida
+# no bundle JS servido pelo app em produção (protegida por RLS, não por
+# sigilo), então não há problema em ela estar em texto puro num workflow
+# público.
+
+on:
+  schedule:
+    - cron: '33 12 * * *' # todo dia às 12:33 UTC
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions do GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Auth health
+        env:
+          SUPABASE_URL: https://tbfufwdocbauhivysbcj.supabase.co
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiZnVmd2RvY2JhdWhpdnlzYmNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3OTE1NDksImV4cCI6MjEwNDM2NzU0OX0.0jv6Rli-jeLfeVpewB415F7tdcr7a4DSqfVEEdpzuD0
+        run: |
+          curl -sf -o /dev/null -w "HTTP %{http_code}\n" \
+            "$SUPABASE_URL/auth/v1/health" \
+            -H "apikey: $SUPABASE_ANON_KEY"
