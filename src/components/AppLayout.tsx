@@ -1,9 +1,10 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ClipboardList, Home, LineChart, User, Dumbbell, Leaf } from 'lucide-react'
+import { ClipboardList, Home, LineChart, User, Dumbbell, Leaf, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, end: true },
+  { to: '/jornada', label: 'Jornada', icon: Trophy, end: false },
   { to: '/registro', label: 'Registrar', icon: Dumbbell, end: false },
   { to: '/planos', label: 'Planos', icon: ClipboardList, end: false },
   { to: '/progresso', label: 'Progresso', icon: LineChart, end: false },
