@@ -18,6 +18,7 @@ export type VidaMedidaTipo = 'peso' | 'cintura' | 'bioimpedancia' | 'condicionam
 export type VidaFotoAngulo = 'frente' | 'lado' | 'costas'
 export type VidaRefeicaoTipo = 'cafe' | 'almoco' | 'lanche' | 'jantar'
 export type VidaAlimentoCategoria = 'proteina' | 'carboidrato' | 'gordura' | 'vegetal' | 'outro'
+export type VidaExercicioCategoria = 'forca' | 'aerobico' | 'mobilidade' | 'esporte' | 'outro'
 export type VidaDiaSemana =
   | 'segunda'
   | 'terca'
@@ -415,6 +416,7 @@ export interface Database {
           dia_semana: VidaDiaSemana
           nome_sessao: string
           duracao_min_estimado: number | null
+          kcal_estimado: number | null
           fixo: boolean
           ordem: number
           ativo: boolean
@@ -456,6 +458,8 @@ export interface Database {
           user_id: string
           data: string
           sessao_id: string | null
+          exercicio_catalogo_id: string | null
+          kcal_realizado: number | null
           duracao_real_min: number | null
           observacao: string | null
           versao_minima: boolean
@@ -467,6 +471,25 @@ export interface Database {
           data: string
         }
         Update: Partial<Database['public']['Tables']['vida_treinos_feitos']['Row']>
+        Relationships: []
+      }
+      vida_exercicios_catalogo: {
+        Row: {
+          id: string
+          user_id: string
+          nome: string
+          categoria: VidaExercicioCategoria
+          kcal_estimado: number
+          duracao_min_estimado: number | null
+          ativo: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['vida_exercicios_catalogo']['Row']> & {
+          user_id: string
+          nome: string
+        }
+        Update: Partial<Database['public']['Tables']['vida_exercicios_catalogo']['Row']>
         Relationships: []
       }
       vida_medidas: {

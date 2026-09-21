@@ -32,16 +32,41 @@ export function useVidaTreinosFeitos(dataInicio: string, dataFim: string = dataI
   }, [refresh])
 
   const registrar = useCallback(
-    async (data: string, sessaoId: string | null, versaoMinima = false) => {
+    async (
+      data: string,
+      opcoes: {
+        sessaoId?: string | null
+        exercicioCatalogoId?: string | null
+        kcalRealizado?: number | null
+        versaoMinima?: boolean
+      } = {},
+    ) => {
       if (!user) return { error: null }
-      const { error } = await supabase
-        .from('vida_treinos_feitos')
-        .insert({ user_id: user.id, data, sessao_id: sessaoId, versao_minima: versaoMinima })
+      const { error } = await supabase.from('vida_treinos_feitos').insert({
+        user_id: user.id,
+        data,
+        sessao_id: opcoes.sessaoId ?? null,
+        exercicio_catalogo_id: opcoes.exercicioCatalogoId ?? null,
+        kcal_realizado: opcoes.kcalRealizado ?? null,
+        versao_minima: opcoes.versaoMinima ?? false,
+      })
       if (!error) await refresh()
       return { error }
     },
     [user, refresh],
   )
 
-  return { feitos, loading, registrar, refresh }
+  const removerFeito = useCallback(
+    async (id: string) => {
+      if (!user) return
+      const { error } = await supabase.from('vida_treinos_feitos').delete().eq('id', id)
+      if (!error) await refresh()
+      return { error }
+    },
+    [user, refresh],
+  )
+
+  const kcalTotal = feitos.reduce((total, f) => total + (f.kcal_realizado ?? 0), 0)
+
+  return { feitos, kcalTotal, loading, registrar, removerFeito, refresh }
 }

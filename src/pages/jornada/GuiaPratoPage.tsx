@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useVidaAlimentosCatalogo } from '@/hooks/vida/useVidaAlimentosCatalogo'
 import { useVidaEventosSociais } from '@/hooks/vida/useVidaEventosSociais'
-import type { VidaAlimentoCategoria } from '@/types/database'
+import { useVidaExerciciosCatalogo } from '@/hooks/vida/useVidaExerciciosCatalogo'
+import type { VidaAlimentoCategoria, VidaExercicioCategoria } from '@/types/database'
 
 const REGRAS_PRATO = [
   'Prato: metade vegetais, 1,5 palma de proteína, 1 punho de carboidrato, 1 polegar de gordura.',
@@ -25,11 +26,26 @@ const CATEGORIAS: { value: VidaAlimentoCategoria; label: string }[] = [
   { value: 'outro', label: 'Outro' },
 ]
 
+const CATEGORIAS_EXERCICIO: { value: VidaExercicioCategoria; label: string }[] = [
+  { value: 'forca', label: 'Força' },
+  { value: 'aerobico', label: 'Aeróbico' },
+  { value: 'mobilidade', label: 'Mobilidade' },
+  { value: 'esporte', label: 'Esporte' },
+  { value: 'outro', label: 'Outro' },
+]
+
 export function GuiaPratoPage() {
   const { pendentesDeConfirmacao, registrarEvento, confirmarProtocolo } = useVidaEventosSociais()
   const { alimentos, adicionar, alternarAtivo } = useVidaAlimentosCatalogo()
+  const { exercicios, adicionar: adicionarExercicio, alternarAtivo: alternarAtivoExercicio } = useVidaExerciciosCatalogo()
 
   const [descricaoEvento, setDescricaoEvento] = useState('')
+  const [novoExercicio, setNovoExercicio] = useState({
+    nome: '',
+    categoria: 'aerobico' as VidaExercicioCategoria,
+    kcal: '',
+    duracao: '',
+  })
   const [novoAlimento, setNovoAlimento] = useState({
     nome: '',
     categoria: 'proteina' as VidaAlimentoCategoria,
@@ -71,6 +87,18 @@ export function GuiaPratoPage() {
       gordura: '',
       fibra: '',
     })
+  }
+
+  async function handleAdicionarExercicio(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!novoExercicio.nome || !novoExercicio.kcal) return
+    await adicionarExercicio({
+      nome: novoExercicio.nome,
+      categoria: novoExercicio.categoria,
+      kcal_estimado: Number(novoExercicio.kcal),
+      duracao_min_estimado: novoExercicio.duracao ? Number(novoExercicio.duracao) : undefined,
+    })
+    setNovoExercicio({ nome: '', categoria: 'aerobico', kcal: '', duracao: '' })
   }
 
   return (
@@ -198,6 +226,73 @@ export function GuiaPratoPage() {
                 type="number"
                 value={novoAlimento.fibra}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, fibra: e.target.value })}
+              />
+            </div>
+            <Button type="submit" className="col-span-2">
+              Adicionar ao catálogo
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Catálogo de exercícios</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-xs text-muted-foreground">
+            Cadastre alternativas ao treino previsto (ex: corrida, esporte, mobilidade) com uma estimativa de
+            calorias -- na tela Hoje, qualquer um deles cumpre a missão de treino se bater a meta de kcal do dia.
+          </p>
+          {exercicios.map((ex) => (
+            <div key={ex.id} className="flex items-center justify-between text-sm">
+              <div>
+                <p className={ex.ativo ? '' : 'text-muted-foreground line-through'}>
+                  {ex.nome} — {ex.kcal_estimado} kcal
+                  {ex.duracao_min_estimado != null && ` · ${ex.duracao_min_estimado} min`}
+                </p>
+                <p className="text-xs capitalize text-muted-foreground">{ex.categoria}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => alternarAtivoExercicio(ex.id, !ex.ativo)}>
+                {ex.ativo ? 'Desativar' : 'Ativar'}
+              </Button>
+            </div>
+          ))}
+
+          <form onSubmit={handleAdicionarExercicio} className="grid grid-cols-2 gap-2 pt-2">
+            <Input
+              placeholder="Nome (ex: corrida)"
+              value={novoExercicio.nome}
+              onChange={(e) => setNovoExercicio({ ...novoExercicio, nome: e.target.value })}
+              className="col-span-2"
+            />
+            <select
+              className="col-span-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={novoExercicio.categoria}
+              onChange={(e) =>
+                setNovoExercicio({ ...novoExercicio, categoria: e.target.value as VidaExercicioCategoria })
+              }
+            >
+              {CATEGORIAS_EXERCICIO.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Kcal estimado</Label>
+              <Input
+                type="number"
+                value={novoExercicio.kcal}
+                onChange={(e) => setNovoExercicio({ ...novoExercicio, kcal: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Duração (min)</Label>
+              <Input
+                type="number"
+                value={novoExercicio.duracao}
+                onChange={(e) => setNovoExercicio({ ...novoExercicio, duracao: e.target.value })}
               />
             </div>
             <Button type="submit" className="col-span-2">
