@@ -5,12 +5,20 @@ import type { ExercicioRow } from '@/hooks/vida/useVidaExerciciosCatalogo'
 interface ExercicioAutocompleteProps {
   exercicios: ExercicioRow[]
   onSelecionar: (exercicio: ExercicioRow) => void
+  /** Dispara a cada tecla digitada, com o texto atual (útil quando o campo também aceita valor livre). */
+  onTextoChange?: (texto: string) => void
   placeholder?: string
   className?: string
 }
 
 /** Campo de busca com preenchimento automático a partir do catálogo de exercícios já cadastrados. */
-export function ExercicioAutocomplete({ exercicios, onSelecionar, placeholder, className }: ExercicioAutocompleteProps) {
+export function ExercicioAutocomplete({
+  exercicios,
+  onSelecionar,
+  onTextoChange,
+  placeholder,
+  className,
+}: ExercicioAutocompleteProps) {
   const [texto, setTexto] = useState('')
   const [aberto, setAberto] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -30,6 +38,7 @@ export function ExercicioAutocomplete({ exercicios, onSelecionar, placeholder, c
   function selecionar(exercicio: ExercicioRow) {
     onSelecionar(exercicio)
     setTexto(exercicio.nome)
+    onTextoChange?.(exercicio.nome)
     setAberto(false)
   }
 
@@ -40,6 +49,7 @@ export function ExercicioAutocomplete({ exercicios, onSelecionar, placeholder, c
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value)
+          onTextoChange?.(e.target.value)
           setAberto(true)
         }}
         onFocus={() => setAberto(true)}

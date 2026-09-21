@@ -1,13 +1,18 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ClipboardList, Home, LineChart, User, Dumbbell, Leaf, Trophy } from 'lucide-react'
+import { CalendarDays, Home, LineChart, User, Dumbbell, Leaf, Target, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// Navegação achatada: as seções mais usadas da Jornada ganham ícone
+// próprio na barra principal em vez de ficarem escondidas atrás de um
+// único item "Jornada". Sprint, Recompensas, Conquistas, Guia e Medir
+// continuam acessíveis pela aba interna da própria Jornada.
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, end: true },
-  { to: '/jornada', label: 'Jornada', icon: Trophy, end: false },
+  { to: '/jornada', label: 'Hoje', icon: Trophy, end: true },
+  { to: '/jornada/semana', label: 'Semana', icon: CalendarDays, end: false },
   { to: '/registro', label: 'Registrar', icon: Dumbbell, end: false },
-  { to: '/planos', label: 'Planos', icon: ClipboardList, end: false },
-  { to: '/progresso', label: 'Progresso', icon: LineChart, end: false },
+  { to: '/jornada/progresso', label: 'Progresso', icon: LineChart, end: false },
+  { to: '/jornada/configuracoes', label: 'Metas', icon: Target, end: false },
   { to: '/perfil', label: 'Perfil', icon: User, end: false },
 ]
 

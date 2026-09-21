@@ -118,13 +118,14 @@ export function DashboardPage() {
     totalGorduraLegado,
     totalWaterMl,
     totalCoffee,
+    totalKcalTreinoLegado,
     addWaterLog,
     addCoffeeLog,
   } = useLogsDoDia(data)
   const { totalDia: totalJornada } = useVidaRefeicaoItensDia(data)
   const { registro, salvar: salvarRegistro } = useVidaRegistroDia(data)
   const { sessoes } = useVidaTreinosPlano()
-  const { kcalTotal: kcalExercicioRealizado } = useVidaTreinosFeitos(data)
+  const { kcalTotal: kcalTreinoJornada } = useVidaTreinosFeitos(data)
   const { logs: workoutLogs } = useWorkoutLogs()
   const { todayItems } = useActiveDietPlan()
   const { days: workoutDays } = useActiveWorkoutPlan()
@@ -138,6 +139,10 @@ export function DashboardPage() {
   const gorduraIngerida = totalGorduraLegado + totalJornada.gorduraG
   const carboidratoIngerido = totalCarboidratoLegado + totalJornada.carboidratoG
   const fibraIngerida = totalJornada.fibraG
+
+  // Soma as duas fontes de registro de treino: a tela Registrar antiga
+  // (workout_logs) e o catálogo de exercícios da Jornada.
+  const kcalExercicioRealizado = totalKcalTreinoLegado + kcalTreinoJornada
 
   const metaCalorias = perfil?.meta_calorias_kcal ?? profile?.daily_calorie_goal ?? 1950
   const metaProteina = perfil?.meta_proteina_g ?? 150

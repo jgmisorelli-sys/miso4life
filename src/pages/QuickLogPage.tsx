@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { AlimentoAutocomplete } from '@/components/AlimentoAutocomplete'
+import { ExercicioAutocomplete } from '@/components/ExercicioAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { useDailyLogs } from '@/hooks/useDailyLogs'
 import { useWorkoutLogs } from '@/hooks/useWorkoutLogs'
 import { useVidaAlimentosCatalogo, type AlimentoRow } from '@/hooks/vida/useVidaAlimentosCatalogo'
+import { useVidaExerciciosCatalogo, type ExercicioRow } from '@/hooks/vida/useVidaExerciciosCatalogo'
 import type { MealType, WorkoutType } from '@/types/database'
 
 const TABS = ['Alimentação', 'Treino'] as const
@@ -201,28 +203,54 @@ function FoodForm() {
 
 function WorkoutForm() {
   const { addWorkoutLog } = useWorkoutLogs()
+  const { exercicios } = useVidaExerciciosCatalogo()
   const [type, setType] = useState<WorkoutType>('strength')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [resetToken, setResetToken] = useState(0)
+
+  const [exerciseName, setExerciseName] = useState('')
+  const [sets, setSets] = useState('')
+  const [reps, setReps] = useState('')
+  const [weightKg, setWeightKg] = useState('')
+  const [durationMin, setDurationMin] = useState('')
+  const [distanceKm, setDistanceKm] = useState('')
+  const [calories, setCalories] = useState('')
+
+  function preencherComExercicio(ex: ExercicioRow) {
+    if (ex.duracao_min_estimado != null) {
+      setDurationMin(String(ex.duracao_min_estimado))
+      if (ex.kcal_por_minuto != null) {
+        setCalories(String(Math.round(ex.kcal_por_minuto * ex.duracao_min_estimado)))
+      }
+    }
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (!exerciseName) return
     setSaving(true)
     setSaved(false)
-    const form = new FormData(e.currentTarget)
     await addWorkoutLog({
       workout_type: type,
-      exercise_name: String(form.get('exercise_name')),
-      sets: form.get('sets') ? Number(form.get('sets')) : undefined,
-      reps: String(form.get('reps') || '') || undefined,
-      weight_kg: form.get('weight_kg') ? Number(form.get('weight_kg')) : undefined,
-      duration_min: form.get('duration_min') ? Number(form.get('duration_min')) : undefined,
-      distance_km: form.get('distance_km') ? Number(form.get('distance_km')) : undefined,
-      calories: form.get('calories') ? Number(form.get('calories')) : undefined,
+      exercise_name: exerciseName,
+      sets: sets ? Number(sets) : undefined,
+      reps: reps || undefined,
+      weight_kg: weightKg ? Number(weightKg) : undefined,
+      duration_min: durationMin ? Number(durationMin) : undefined,
+      distance_km: distanceKm ? Number(distanceKm) : undefined,
+      calories: calories ? Number(calories) : undefined,
     })
     setSaving(false)
     setSaved(true)
-    e.currentTarget.reset()
+    setExerciseName('')
+    setSets('')
+    setReps('')
+    setWeightKg('')
+    setDurationMin('')
+    setDistanceKm('')
+    setCalories('')
+    setResetToken((t) => t + 1)
   }
 
   return (
@@ -248,37 +276,70 @@ function WorkoutForm() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="exercise_name">{type === 'strength' ? 'Exercício' : 'Atividade'}</Label>
-            <Input id="exercise_name" name="exercise_name" required />
+            <ExercicioAutocomplete
+              key={resetToken}
+              exercicios={exercicios.filter((e) => e.ativo)}
+              placeholder="Digite pra buscar no catálogo, ou digite livre"
+              className="h-10 text-sm"
+              onTextoChange={setExerciseName}
+              onSelecionar={preencherComExercicio}
+            />
           </div>
 
           {type === 'strength' ? (
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="sets">Séries</Label>
-                <Input id="sets" name="sets" type="number" min="0" />
+                <Input id="sets" type="number" min="0" value={sets} onChange={(e) => setSets(e.target.value)} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="reps">Reps</Label>
-                <Input id="reps" name="reps" placeholder="8-10" />
+                <Input id="reps" placeholder="8-10" value={reps} onChange={(e) => setReps(e.target.value)} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="weight_kg">Carga (kg)</Label>
-                <Input id="weight_kg" name="weight_kg" type="number" min="0" step="0.5" />
+                <Input
+                  id="weight_kg"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(e.target.value)}
+                />
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="duration_min">Duração (min)</Label>
-                <Input id="duration_min" name="duration_min" type="number" min="0" />
+                <Input
+                  id="duration_min"
+                  type="number"
+                  min="0"
+                  value={durationMin}
+                  onChange={(e) => setDurationMin(e.target.value)}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="distance_km">Distância (km)</Label>
-                <Input id="distance_km" name="distance_km" type="number" min="0" step="0.1" />
+                <Input
+                  id="distance_km"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={distanceKm}
+                  onChange={(e) => setDistanceKm(e.target.value)}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="calories">Calorias</Label>
-                <Input id="calories" name="calories" type="number" min="0" />
+                <Input
+                  id="calories"
+                  type="number"
+                  min="0"
+                  value={calories}
+                  onChange={(e) => setCalories(e.target.value)}
+                />
               </div>
             </div>
           )}

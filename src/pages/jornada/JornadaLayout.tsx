@@ -1,16 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
+// Hoje, Semana, Progresso e Metas já têm ícone próprio na barra principal
+// (AppLayout) -- essa aba interna só cobre o que sobrou.
 const TABS = [
-  { to: '/jornada', label: 'Hoje', end: true },
-  { to: '/jornada/semana', label: 'Semana', end: false },
   { to: '/jornada/sprint', label: 'Sprint', end: false },
-  { to: '/jornada/progresso', label: 'Progresso', end: false },
   { to: '/jornada/recompensas', label: 'Recompensas', end: false },
   { to: '/jornada/conquistas', label: 'Conquistas', end: false },
   { to: '/jornada/guia', label: 'Guia', end: false },
   { to: '/jornada/medir', label: 'Medir', end: false },
-  { to: '/jornada/configuracoes', label: 'Config', end: false },
 ]
 
 export function JornadaLayout() {

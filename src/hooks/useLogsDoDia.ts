@@ -7,13 +7,15 @@ import type { CoffeeUnit, Database } from '@/types/database'
 type FoodLog = Database['public']['Tables']['food_logs']['Row']
 type WaterLog = Database['public']['Tables']['water_logs']['Row']
 type CoffeeLog = Database['public']['Tables']['coffee_logs']['Row']
+type WorkoutLog = Database['public']['Tables']['workout_logs']['Row']
 
-/** Água, café e alimentação (tela Registrar antiga) de um dia específico -- usado pelo Dashboard com navegação entre dias. */
+/** Água, café, alimentação e treino (tela Registrar antiga) de um dia específico -- usado pelo Dashboard com navegação entre dias. */
 export function useLogsDoDia(data: string) {
   const { user } = useAuth()
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([])
   const [waterLogs, setWaterLogs] = useState<WaterLog[]>([])
   const [coffeeLogs, setCoffeeLogs] = useState<CoffeeLog[]>([])
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([])
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
@@ -21,6 +23,7 @@ export function useLogsDoDia(data: string) {
       setFoodLogs([])
       setWaterLogs([])
       setCoffeeLogs([])
+      setWorkoutLogs([])
       setLoading(false)
       return
     }
@@ -29,7 +32,7 @@ export function useLogsDoDia(data: string) {
     const desdeIso = startOfDay(referencia).toISOString()
     const ateIso = endOfDay(referencia).toISOString()
 
-    const [food, water, coffee] = await Promise.all([
+    const [food, water, coffee, workout] = await Promise.all([
       supabase
         .from('food_logs')
         .select('*')
@@ -48,11 +51,18 @@ export function useLogsDoDia(data: string) {
         .eq('user_id', user.id)
         .gte('logged_at', desdeIso)
         .lte('logged_at', ateIso),
+      supabase
+        .from('workout_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('logged_at', desdeIso)
+        .lte('logged_at', ateIso),
     ])
 
     setFoodLogs(food.data ?? [])
     setWaterLogs(water.data ?? [])
     setCoffeeLogs(coffee.data ?? [])
+    setWorkoutLogs(workout.data ?? [])
     setLoading(false)
   }, [user, data])
 
@@ -86,15 +96,18 @@ export function useLogsDoDia(data: string) {
   const totalGorduraLegado = foodLogs.reduce((sum, log) => sum + (log.fat_g ?? 0), 0)
   const totalWaterMl = waterLogs.reduce((sum, log) => sum + log.amount_ml, 0)
   const totalCoffee = coffeeLogs.reduce((sum, log) => sum + log.amount, 0)
+  const totalKcalTreinoLegado = workoutLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0)
 
   return {
     foodLogs,
+    workoutLogs,
     totalCaloriesLegado,
     totalProteinaLegado,
     totalCarboidratoLegado,
     totalGorduraLegado,
     totalWaterMl,
     totalCoffee,
+    totalKcalTreinoLegado,
     loading,
     addWaterLog,
     addCoffeeLog,
