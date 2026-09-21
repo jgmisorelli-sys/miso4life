@@ -5,12 +5,23 @@ import type { AlimentoRow } from '@/hooks/vida/useVidaAlimentosCatalogo'
 interface AlimentoAutocompleteProps {
   alimentos: AlimentoRow[]
   onSelecionar: (alimento: AlimentoRow) => void
+  /** Dispara a cada tecla digitada, com o texto atual (útil quando o campo também aceita valor livre). */
+  onTextoChange?: (texto: string) => void
+  valorInicial?: string
   placeholder?: string
+  className?: string
 }
 
-/** Campo de busca com preenchimento automático -- todo lançamento parte de um alimento já cadastrado. */
-export function AlimentoAutocomplete({ alimentos, onSelecionar, placeholder }: AlimentoAutocompleteProps) {
-  const [texto, setTexto] = useState('')
+/** Campo de busca com preenchimento automático a partir do catálogo de alimentos já cadastrados. */
+export function AlimentoAutocomplete({
+  alimentos,
+  onSelecionar,
+  onTextoChange,
+  valorInicial,
+  placeholder,
+  className,
+}: AlimentoAutocompleteProps) {
+  const [texto, setTexto] = useState(valorInicial ?? '')
   const [aberto, setAberto] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -28,6 +39,7 @@ export function AlimentoAutocomplete({ alimentos, onSelecionar, placeholder }: A
   function selecionar(alimento: AlimentoRow) {
     onSelecionar(alimento)
     setTexto(alimento.nome)
+    onTextoChange?.(alimento.nome)
     setAberto(false)
   }
 
@@ -38,10 +50,11 @@ export function AlimentoAutocomplete({ alimentos, onSelecionar, placeholder }: A
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value)
+          onTextoChange?.(e.target.value)
           setAberto(true)
         }}
         onFocus={() => setAberto(true)}
-        className="text-xs"
+        className={className}
       />
       {aberto && resultados.length > 0 && (
         <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-border bg-card shadow-md">

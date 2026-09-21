@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { AlimentoAutocomplete } from '@/components/AlimentoAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -6,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { useDailyLogs } from '@/hooks/useDailyLogs'
 import { useWorkoutLogs } from '@/hooks/useWorkoutLogs'
+import { useVidaAlimentosCatalogo, type AlimentoRow } from '@/hooks/vida/useVidaAlimentosCatalogo'
 import type { MealType, WorkoutType } from '@/types/database'
 
 const TABS = ['Alimentação', 'Treino'] as const
@@ -53,26 +55,50 @@ export function QuickLogPage() {
 
 function FoodForm() {
   const { addFoodLog } = useDailyLogs()
+  const { alimentos } = useVidaAlimentosCatalogo()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [resetToken, setResetToken] = useState(0)
+
+  const [mealType, setMealType] = useState<MealType>('breakfast')
+  const [foodName, setFoodName] = useState('')
+  const [quantity, setQuantity] = useState('')
+  const [calories, setCalories] = useState('')
+  const [proteinG, setProteinG] = useState('')
+  const [carbsG, setCarbsG] = useState('')
+  const [fatG, setFatG] = useState('')
+
+  function preencherComAlimento(a: AlimentoRow) {
+    setQuantity(a.porcao_label)
+    setCalories(String(a.kcal_por_porcao))
+    setProteinG(a.proteina_g_por_porcao != null ? String(a.proteina_g_por_porcao) : '')
+    setCarbsG(a.carboidrato_g_por_porcao != null ? String(a.carboidrato_g_por_porcao) : '')
+    setFatG(a.gordura_g_por_porcao != null ? String(a.gordura_g_por_porcao) : '')
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (!foodName) return
     setSaving(true)
     setSaved(false)
-    const form = new FormData(e.currentTarget)
     await addFoodLog({
-      meal_type: form.get('meal_type') as MealType,
-      food_name: String(form.get('food_name')),
-      quantity: String(form.get('quantity') || '') || undefined,
-      calories: form.get('calories') ? Number(form.get('calories')) : undefined,
-      protein_g: form.get('protein_g') ? Number(form.get('protein_g')) : undefined,
-      carbs_g: form.get('carbs_g') ? Number(form.get('carbs_g')) : undefined,
-      fat_g: form.get('fat_g') ? Number(form.get('fat_g')) : undefined,
+      meal_type: mealType,
+      food_name: foodName,
+      quantity: quantity || undefined,
+      calories: calories ? Number(calories) : undefined,
+      protein_g: proteinG ? Number(proteinG) : undefined,
+      carbs_g: carbsG ? Number(carbsG) : undefined,
+      fat_g: fatG ? Number(fatG) : undefined,
     })
     setSaving(false)
     setSaved(true)
-    e.currentTarget.reset()
+    setFoodName('')
+    setQuantity('')
+    setCalories('')
+    setProteinG('')
+    setCarbsG('')
+    setFatG('')
+    setResetToken((t) => t + 1)
   }
 
   return (
@@ -85,6 +111,8 @@ function FoodForm() {
               id="meal_type"
               name="meal_type"
               required
+              value={mealType}
+              onChange={(e) => setMealType(e.target.value as MealType)}
               className="h-10 rounded-md border border-input bg-background px-3 text-sm"
             >
               {MEAL_OPTIONS.map((opt) => (
@@ -96,28 +124,69 @@ function FoodForm() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="food_name">Alimento</Label>
-            <Input id="food_name" name="food_name" required />
+            <AlimentoAutocomplete
+              key={resetToken}
+              alimentos={alimentos.filter((a) => a.ativo)}
+              placeholder="Digite pra buscar no catálogo, ou digite livre"
+              className="h-10 text-sm"
+              onTextoChange={setFoodName}
+              onSelecionar={preencherComAlimento}
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="quantity">Quantidade</Label>
-            <Input id="quantity" name="quantity" placeholder="ex: 100g, 1 unidade" />
+            <Input
+              id="quantity"
+              name="quantity"
+              placeholder="ex: 100g, 1 unidade"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="calories">Calorias</Label>
-              <Input id="calories" name="calories" type="number" min="0" />
+              <Input
+                id="calories"
+                name="calories"
+                type="number"
+                min="0"
+                value={calories}
+                onChange={(e) => setCalories(e.target.value)}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="protein_g">Proteína (g)</Label>
-              <Input id="protein_g" name="protein_g" type="number" min="0" />
+              <Input
+                id="protein_g"
+                name="protein_g"
+                type="number"
+                min="0"
+                value={proteinG}
+                onChange={(e) => setProteinG(e.target.value)}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="carbs_g">Carbo (g)</Label>
-              <Input id="carbs_g" name="carbs_g" type="number" min="0" />
+              <Input
+                id="carbs_g"
+                name="carbs_g"
+                type="number"
+                min="0"
+                value={carbsG}
+                onChange={(e) => setCarbsG(e.target.value)}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="fat_g">Gordura (g)</Label>
-              <Input id="fat_g" name="fat_g" type="number" min="0" />
+              <Input
+                id="fat_g"
+                name="fat_g"
+                type="number"
+                min="0"
+                value={fatG}
+                onChange={(e) => setFatG(e.target.value)}
+              />
             </div>
           </div>
           <Button type="submit" disabled={saving}>

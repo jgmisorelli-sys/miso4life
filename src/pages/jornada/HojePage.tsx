@@ -357,6 +357,7 @@ export function HojePage() {
                       key={`${tipo}-${resetTokens[tipo]}`}
                       alimentos={alimentos.filter((a) => a.ativo)}
                       placeholder="Digite o alimento..."
+                      className="text-xs"
                       onSelecionar={(a) =>
                         setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], alimentoId: a.id } })
                       }
