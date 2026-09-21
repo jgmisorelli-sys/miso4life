@@ -38,6 +38,7 @@ export function useVidaTreinosFeitos(dataInicio: string, dataFim: string = dataI
         sessaoId?: string | null
         exercicioCatalogoId?: string | null
         kcalRealizado?: number | null
+        duracaoRealMin?: number | null
         versaoMinima?: boolean
       } = {},
     ) => {
@@ -48,6 +49,7 @@ export function useVidaTreinosFeitos(dataInicio: string, dataFim: string = dataI
         sessao_id: opcoes.sessaoId ?? null,
         exercicio_catalogo_id: opcoes.exercicioCatalogoId ?? null,
         kcal_realizado: opcoes.kcalRealizado ?? null,
+        duracao_real_min: opcoes.duracaoRealMin ?? null,
         versao_minima: opcoes.versaoMinima ?? false,
       })
       if (!error) await refresh()

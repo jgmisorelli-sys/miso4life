@@ -244,6 +244,13 @@ export interface Database {
           data_inicio_plano: string
           fuso_horario: string
           aceitou_aviso_saude: boolean
+          meta_calorias_kcal: number
+          meta_proteina_g: number
+          meta_gordura_g: number
+          meta_carboidrato_g: number
+          meta_fibra_g: number
+          meta_passos: number
+          meta_sono_horas: number
           created_at: string
           updated_at: string
         }
@@ -480,6 +487,7 @@ export interface Database {
           nome: string
           categoria: VidaExercicioCategoria
           kcal_estimado: number
+          kcal_por_minuto: number | null
           duracao_min_estimado: number | null
           ativo: boolean
           created_at: string

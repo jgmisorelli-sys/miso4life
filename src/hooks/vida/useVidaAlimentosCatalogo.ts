@@ -61,5 +61,15 @@ export function useVidaAlimentosCatalogo() {
     [user, refresh],
   )
 
-  return { alimentos, loading, adicionar, alternarAtivo, refresh }
+  const atualizar = useCallback(
+    async (id: string, alimento: NovoAlimento) => {
+      if (!user) return
+      const { error } = await supabase.from('vida_alimentos_catalogo').update(alimento).eq('id', id)
+      if (!error) await refresh()
+      return { error }
+    },
+    [user, refresh],
+  )
+
+  return { alimentos, loading, adicionar, atualizar, alternarAtivo, refresh }
 }

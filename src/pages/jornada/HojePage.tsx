@@ -13,6 +13,7 @@ import { useVidaAlimentosCatalogo } from '@/hooks/vida/useVidaAlimentosCatalogo'
 import { useVidaExerciciosCatalogo } from '@/hooks/vida/useVidaExerciciosCatalogo'
 import { useVidaMissoesConfig } from '@/hooks/vida/useVidaMissoesConfig'
 import { useVidaMissoesFeitas } from '@/hooks/vida/useVidaMissoesFeitas'
+import { useVidaPerfil } from '@/hooks/vida/useVidaPerfil'
 import { useVidaRefeicaoItensDia } from '@/hooks/vida/useVidaRefeicaoItensDia'
 import { useVidaRefeicoesDia } from '@/hooks/vida/useVidaRefeicoesDia'
 import { useVidaRegistroDia } from '@/hooks/vida/useVidaRegistroDia'
@@ -21,9 +22,8 @@ import { useVidaTreinosFeitos } from '@/hooks/vida/useVidaTreinosFeitos'
 import { useVidaTreinosPlano } from '@/hooks/vida/useVidaTreinosPlano'
 import type { VidaRefeicaoTipo } from '@/types/database'
 
-// TODO(Fase 6/7 - Configurações): a meta de passos deve seguir a progressão
-// semanal de 6.500 a 9.500 (seção 6.1). Por enquanto, um valor fixo.
-const META_PASSOS_PADRAO = 8000
+// Semana pesada usa uma meta de passos reduzida em relação à meta
+// configurada em Configurações (seção 7.4: meta de passos vira 7.000).
 const META_PASSOS_SEMANA_PESADA = 7000
 
 const REFEICOES: { tipo: VidaRefeicaoTipo; label: string }[] = [
@@ -38,6 +38,7 @@ export function HojePage() {
   const diaSemana = diaSemanaDe(hoje)
 
   const { diarias, loading: loadingMissoes } = useVidaMissoesConfig()
+  const { perfil } = useVidaPerfil()
   const { codigosConcluidos, marcar: marcarMissao } = useVidaMissoesFeitas(hoje)
   const { streak, marcarMinimoCumprido } = useVidaStreak()
   const { registro, salvar: salvarRegistro } = useVidaRegistroDia(hoje)
@@ -51,6 +52,7 @@ export function HojePage() {
 
   const [passosInput, setPassosInput] = useState('')
   const [exercicioSelecionadoId, setExercicioSelecionadoId] = useState('')
+  const [minutosExercicio, setMinutosExercicio] = useState('')
   const [resetTokenExercicio, setResetTokenExercicio] = useState(0)
   const [novoItem, setNovoItem] = useState<Record<VidaRefeicaoTipo, { alimentoId: string; porcoes: string }>>({
     cafe: { alimentoId: '', porcoes: '1' },
@@ -108,7 +110,7 @@ export function HojePage() {
     const valor = Number(passosInput)
     if (!valor) return
     await salvarRegistro({ passos: valor })
-    const meta = semanaPesada ? META_PASSOS_SEMANA_PESADA : META_PASSOS_PADRAO
+    const meta = semanaPesada ? META_PASSOS_SEMANA_PESADA : (perfil?.meta_passos ?? 8000)
     if (valor >= meta && !codigosConcluidos.includes('meta_passos')) {
       await marcar('meta_passos')
     }
@@ -127,11 +129,19 @@ export function HojePage() {
   async function adicionarExercicioAlternativo() {
     const exercicio = exercicios.find((e) => e.id === exercicioSelecionadoId)
     if (!exercicio) return
-    await registrarTreino(hoje, { exercicioCatalogoId: exercicio.id, kcalRealizado: exercicio.kcal_estimado })
+    const minutos = Number(minutosExercicio) || exercicio.duracao_min_estimado || 0
+    const kcalRealizado = exercicio.kcal_por_minuto != null ? exercicio.kcal_por_minuto * minutos : exercicio.kcal_estimado
+
+    await registrarTreino(hoje, {
+      exercicioCatalogoId: exercicio.id,
+      kcalRealizado,
+      duracaoRealMin: minutos || null,
+    })
     setExercicioSelecionadoId('')
+    setMinutosExercicio('')
     setResetTokenExercicio((t) => t + 1)
 
-    const totalDepois = kcalTreinoHoje + exercicio.kcal_estimado
+    const totalDepois = kcalTreinoHoje + kcalRealizado
     const bateuMeta = metaKcalTreino === 0 || totalDepois >= metaKcalTreino
     if (bateuMeta && !codigosConcluidos.includes('treino_previsto')) {
       await marcar('treino_previsto')
@@ -357,7 +367,17 @@ export function HojePage() {
                   exercicios={exercicios.filter((e) => e.ativo)}
                   placeholder="Digite o exercício..."
                   className="text-xs"
-                  onSelecionar={(e) => setExercicioSelecionadoId(e.id)}
+                  onSelecionar={(e) => {
+                    setExercicioSelecionadoId(e.id)
+                    setMinutosExercicio(e.duracao_min_estimado ? String(e.duracao_min_estimado) : '')
+                  }}
+                />
+                <Input
+                  type="number"
+                  placeholder="min"
+                  className="w-16 px-2 text-xs"
+                  value={minutosExercicio}
+                  onChange={(ev) => setMinutosExercicio(ev.target.value)}
                 />
                 <Button size="sm" disabled={!exercicioSelecionadoId} onClick={adicionarExercicioAlternativo}>
                   +

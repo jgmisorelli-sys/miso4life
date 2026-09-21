@@ -8,8 +8,10 @@ export type ExercicioRow = Database['public']['Tables']['vida_exercicios_catalog
 export interface NovoExercicio {
   nome: string
   categoria: VidaExercicioCategoria
-  kcal_estimado: number
+  kcal_por_minuto: number
   duracao_min_estimado?: number
+  /** Cache: kcal_por_minuto × duracao_min_estimado, calculado no cadastro. */
+  kcal_estimado: number
 }
 
 export function useVidaExerciciosCatalogo() {
@@ -47,6 +49,16 @@ export function useVidaExerciciosCatalogo() {
     [user, refresh],
   )
 
+  const atualizar = useCallback(
+    async (id: string, exercicio: NovoExercicio) => {
+      if (!user) return
+      const { error } = await supabase.from('vida_exercicios_catalogo').update(exercicio).eq('id', id)
+      if (!error) await refresh()
+      return { error }
+    },
+    [user, refresh],
+  )
+
   const alternarAtivo = useCallback(
     async (id: string, ativo: boolean) => {
       if (!user) return
@@ -57,5 +69,5 @@ export function useVidaExerciciosCatalogo() {
     [user, refresh],
   )
 
-  return { exercicios, loading, adicionar, alternarAtivo, refresh }
+  return { exercicios, loading, adicionar, atualizar, alternarAtivo, refresh }
 }

@@ -31,6 +31,17 @@
   --coffee-soft: oklch(0.94 0.03 60);
   --workout: oklch(0.58 0.16 300);
   --workout-soft: oklch(0.95 0.03 300);
+
+  --protein: oklch(0.55 0.15 165);
+  --protein-soft: oklch(0.95 0.03 165);
+  --fat: oklch(0.75 0.15 85);
+  --fat-soft: oklch(0.96 0.04 90);
+  --carbs: oklch(0.65 0.16 55);
+  --carbs-soft: oklch(0.96 0.03 55);
+  --fiber: oklch(0.5 0.1 145);
+  --fiber-soft: oklch(0.95 0.03 145);
+  --sleep: oklch(0.5 0.12 275);
+  --sleep-soft: oklch(0.95 0.03 275);
 }
 
 @theme inline {
@@ -63,6 +74,17 @@
   --color-coffee-soft: var(--coffee-soft);
   --color-workout: var(--workout);
   --color-workout-soft: var(--workout-soft);
+
+  --color-protein: var(--protein);
+  --color-protein-soft: var(--protein-soft);
+  --color-fat: var(--fat);
+  --color-fat-soft: var(--fat-soft);
+  --color-carbs: var(--carbs);
+  --color-carbs-soft: var(--carbs-soft);
+  --color-fiber: var(--fiber);
+  --color-fiber-soft: var(--fiber-soft);
+  --color-sleep: var(--sleep);
+  --color-sleep-soft: var(--sleep-soft);
 }
 
 body {

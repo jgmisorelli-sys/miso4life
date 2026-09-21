@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
-import { Bell, Download, MessageCircle, ShieldAlert, Trash2, Users } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Bell, Download, MessageCircle, ShieldAlert, Target, Trash2, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { excluirMeusDados } from '@/lib/vida/dataDelete'
@@ -10,6 +11,7 @@ import { exportarDadosCsv, exportarDadosJson } from '@/lib/vida/dataExport'
 import { usePushNotifications } from '@/hooks/vida/usePushNotifications'
 import { useVidaFamiliaParticipantes } from '@/hooks/vida/useVidaFamiliaParticipantes'
 import { useVidaLembretesConfig } from '@/hooks/vida/useVidaLembretesConfig'
+import { useVidaPerfil } from '@/hooks/vida/useVidaPerfil'
 import type { VidaLembreteTipo } from '@/types/database'
 
 const NOME_LEMBRETE: Record<VidaLembreteTipo, string> = {
@@ -25,10 +27,49 @@ export function ConfiguracoesPage() {
   const { suportado, inscrito, carregando, ativar, desativar } = usePushNotifications()
   const { lembretes, atualizar } = useVidaLembretesConfig()
   const { participantes, adicionar, alternarAtivo } = useVidaFamiliaParticipantes()
+  const { perfil, salvar: salvarPerfil } = useVidaPerfil()
   const [novoParticipante, setNovoParticipante] = useState('')
   const [exportando, setExportando] = useState<'json' | 'csv' | null>(null)
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [excluindo, setExcluindo] = useState(false)
+  const [salvandoMetas, setSalvandoMetas] = useState(false)
+  const [metas, setMetas] = useState({
+    meta_calorias_kcal: '',
+    meta_proteina_g: '',
+    meta_gordura_g: '',
+    meta_carboidrato_g: '',
+    meta_fibra_g: '',
+    meta_passos: '',
+    meta_sono_horas: '',
+  })
+
+  useEffect(() => {
+    if (!perfil) return
+    setMetas({
+      meta_calorias_kcal: String(perfil.meta_calorias_kcal),
+      meta_proteina_g: String(perfil.meta_proteina_g),
+      meta_gordura_g: String(perfil.meta_gordura_g),
+      meta_carboidrato_g: String(perfil.meta_carboidrato_g),
+      meta_fibra_g: String(perfil.meta_fibra_g),
+      meta_passos: String(perfil.meta_passos),
+      meta_sono_horas: String(perfil.meta_sono_horas),
+    })
+  }, [perfil])
+
+  async function handleSalvarMetas(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setSalvandoMetas(true)
+    await salvarPerfil({
+      meta_calorias_kcal: Number(metas.meta_calorias_kcal),
+      meta_proteina_g: Number(metas.meta_proteina_g),
+      meta_gordura_g: Number(metas.meta_gordura_g),
+      meta_carboidrato_g: Number(metas.meta_carboidrato_g),
+      meta_fibra_g: Number(metas.meta_fibra_g),
+      meta_passos: Number(metas.meta_passos),
+      meta_sono_horas: Number(metas.meta_sono_horas),
+    })
+    setSalvandoMetas(false)
+  }
 
   async function handleAdicionarParticipante(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -64,6 +105,85 @@ export function ConfiguracoesPage() {
           <p>
             Este plano é orientação estruturada e não substitui avaliação médica e nutricional presencial.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Target className="h-4 w-4" /> Metas diárias
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSalvarMetas} className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="meta_calorias_kcal">Calorias (kcal)</Label>
+              <Input
+                id="meta_calorias_kcal"
+                type="number"
+                value={metas.meta_calorias_kcal}
+                onChange={(e) => setMetas({ ...metas, meta_calorias_kcal: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="meta_proteina_g">Proteína (g)</Label>
+              <Input
+                id="meta_proteina_g"
+                type="number"
+                value={metas.meta_proteina_g}
+                onChange={(e) => setMetas({ ...metas, meta_proteina_g: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="meta_gordura_g">Gordura (g)</Label>
+              <Input
+                id="meta_gordura_g"
+                type="number"
+                value={metas.meta_gordura_g}
+                onChange={(e) => setMetas({ ...metas, meta_gordura_g: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="meta_carboidrato_g">Carboidrato (g)</Label>
+              <Input
+                id="meta_carboidrato_g"
+                type="number"
+                value={metas.meta_carboidrato_g}
+                onChange={(e) => setMetas({ ...metas, meta_carboidrato_g: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="meta_fibra_g">Fibra (g)</Label>
+              <Input
+                id="meta_fibra_g"
+                type="number"
+                value={metas.meta_fibra_g}
+                onChange={(e) => setMetas({ ...metas, meta_fibra_g: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="meta_passos">Passos</Label>
+              <Input
+                id="meta_passos"
+                type="number"
+                value={metas.meta_passos}
+                onChange={(e) => setMetas({ ...metas, meta_passos: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="meta_sono_horas">Sono (horas)</Label>
+              <Input
+                id="meta_sono_horas"
+                type="number"
+                step="0.5"
+                value={metas.meta_sono_horas}
+                onChange={(e) => setMetas({ ...metas, meta_sono_horas: e.target.value })}
+              />
+            </div>
+            <Button type="submit" className="col-span-2" disabled={salvandoMetas}>
+              Salvar metas
+            </Button>
+          </form>
         </CardContent>
       </Card>
 

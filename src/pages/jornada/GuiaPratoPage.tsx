@@ -3,10 +3,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useVidaAlimentosCatalogo } from '@/hooks/vida/useVidaAlimentosCatalogo'
+import { useVidaAlimentosCatalogo, type NovoAlimento } from '@/hooks/vida/useVidaAlimentosCatalogo'
 import { useVidaEventosSociais } from '@/hooks/vida/useVidaEventosSociais'
-import { useVidaExerciciosCatalogo } from '@/hooks/vida/useVidaExerciciosCatalogo'
-import type { VidaAlimentoCategoria, VidaExercicioCategoria } from '@/types/database'
+import { useVidaExerciciosCatalogo, type NovoExercicio } from '@/hooks/vida/useVidaExerciciosCatalogo'
 
 const REGRAS_PRATO = [
   'Prato: metade vegetais, 1,5 palma de proteína, 1 punho de carboidrato, 1 polegar de gordura.',
@@ -18,44 +17,26 @@ const REGRAS_PRATO = [
   'Protocolo de evento social: lanche com proteína antes, regra do prato, uma escolha livre e pronto.',
 ]
 
-const CATEGORIAS: { value: VidaAlimentoCategoria; label: string }[] = [
-  { value: 'proteina', label: 'Proteína' },
-  { value: 'carboidrato', label: 'Carboidrato' },
-  { value: 'gordura', label: 'Gordura' },
-  { value: 'vegetal', label: 'Vegetal' },
-  { value: 'outro', label: 'Outro' },
-]
-
-const CATEGORIAS_EXERCICIO: { value: VidaExercicioCategoria; label: string }[] = [
-  { value: 'forca', label: 'Força' },
-  { value: 'aerobico', label: 'Aeróbico' },
-  { value: 'mobilidade', label: 'Mobilidade' },
-  { value: 'esporte', label: 'Esporte' },
-  { value: 'outro', label: 'Outro' },
-]
+const ALIMENTO_VAZIO = { nome: '', porcao_label: '', kcal: '', proteina: '', carboidrato: '', gordura: '', fibra: '' }
+const EXERCICIO_VAZIO = { nome: '', kcalPorMinuto: '', duracao: '' }
 
 export function GuiaPratoPage() {
   const { pendentesDeConfirmacao, registrarEvento, confirmarProtocolo } = useVidaEventosSociais()
-  const { alimentos, adicionar, alternarAtivo } = useVidaAlimentosCatalogo()
-  const { exercicios, adicionar: adicionarExercicio, alternarAtivo: alternarAtivoExercicio } = useVidaExerciciosCatalogo()
+  const { alimentos, adicionar, atualizar, alternarAtivo } = useVidaAlimentosCatalogo()
+  const {
+    exercicios,
+    adicionar: adicionarExercicio,
+    atualizar: atualizarExercicio,
+    alternarAtivo: alternarAtivoExercicio,
+  } = useVidaExerciciosCatalogo()
 
   const [descricaoEvento, setDescricaoEvento] = useState('')
-  const [novoExercicio, setNovoExercicio] = useState({
-    nome: '',
-    categoria: 'aerobico' as VidaExercicioCategoria,
-    kcal: '',
-    duracao: '',
-  })
-  const [novoAlimento, setNovoAlimento] = useState({
-    nome: '',
-    categoria: 'proteina' as VidaAlimentoCategoria,
-    porcao_label: '1 palma',
-    kcal: '',
-    proteina: '',
-    carboidrato: '',
-    gordura: '',
-    fibra: '',
-  })
+
+  const [novoAlimento, setNovoAlimento] = useState(ALIMENTO_VAZIO)
+  const [editandoAlimentoId, setEditandoAlimentoId] = useState<string | null>(null)
+
+  const [novoExercicio, setNovoExercicio] = useState(EXERCICIO_VAZIO)
+  const [editandoExercicioId, setEditandoExercicioId] = useState<string | null>(null)
 
   async function handleRegistrarEvento(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -64,41 +45,71 @@ export function GuiaPratoPage() {
     setDescricaoEvento('')
   }
 
-  async function handleAdicionarAlimento(e: FormEvent<HTMLFormElement>) {
+  function editarAlimento(alimento: (typeof alimentos)[number]) {
+    setEditandoAlimentoId(alimento.id)
+    setNovoAlimento({
+      nome: alimento.nome,
+      porcao_label: alimento.porcao_label,
+      kcal: String(alimento.kcal_por_porcao),
+      proteina: alimento.proteina_g_por_porcao != null ? String(alimento.proteina_g_por_porcao) : '',
+      carboidrato: alimento.carboidrato_g_por_porcao != null ? String(alimento.carboidrato_g_por_porcao) : '',
+      gordura: alimento.gordura_g_por_porcao != null ? String(alimento.gordura_g_por_porcao) : '',
+      fibra: alimento.fibra_g_por_porcao != null ? String(alimento.fibra_g_por_porcao) : '',
+    })
+  }
+
+  function cancelarEdicaoAlimento() {
+    setEditandoAlimentoId(null)
+    setNovoAlimento(ALIMENTO_VAZIO)
+  }
+
+  async function handleSalvarAlimento(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!novoAlimento.nome || !novoAlimento.kcal) return
-    await adicionar({
+    const dados: NovoAlimento = {
       nome: novoAlimento.nome,
-      categoria: novoAlimento.categoria,
-      porcao_label: novoAlimento.porcao_label,
+      categoria: 'outro',
+      porcao_label: novoAlimento.porcao_label || '1 porção',
       kcal_por_porcao: Number(novoAlimento.kcal),
       proteina_g_por_porcao: novoAlimento.proteina ? Number(novoAlimento.proteina) : undefined,
       carboidrato_g_por_porcao: novoAlimento.carboidrato ? Number(novoAlimento.carboidrato) : undefined,
       gordura_g_por_porcao: novoAlimento.gordura ? Number(novoAlimento.gordura) : undefined,
       fibra_g_por_porcao: novoAlimento.fibra ? Number(novoAlimento.fibra) : undefined,
-    })
-    setNovoAlimento({
-      nome: '',
-      categoria: 'proteina',
-      porcao_label: '1 palma',
-      kcal: '',
-      proteina: '',
-      carboidrato: '',
-      gordura: '',
-      fibra: '',
+    }
+    if (editandoAlimentoId) await atualizar(editandoAlimentoId, dados)
+    else await adicionar(dados)
+    cancelarEdicaoAlimento()
+  }
+
+  function editarExercicio(exercicio: (typeof exercicios)[number]) {
+    setEditandoExercicioId(exercicio.id)
+    setNovoExercicio({
+      nome: exercicio.nome,
+      kcalPorMinuto: exercicio.kcal_por_minuto != null ? String(exercicio.kcal_por_minuto) : '',
+      duracao: exercicio.duracao_min_estimado != null ? String(exercicio.duracao_min_estimado) : '',
     })
   }
 
-  async function handleAdicionarExercicio(e: FormEvent<HTMLFormElement>) {
+  function cancelarEdicaoExercicio() {
+    setEditandoExercicioId(null)
+    setNovoExercicio(EXERCICIO_VAZIO)
+  }
+
+  async function handleSalvarExercicio(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!novoExercicio.nome || !novoExercicio.kcal) return
-    await adicionarExercicio({
+    if (!novoExercicio.nome || !novoExercicio.kcalPorMinuto) return
+    const kcalPorMinuto = Number(novoExercicio.kcalPorMinuto)
+    const duracao = novoExercicio.duracao ? Number(novoExercicio.duracao) : undefined
+    const dados: NovoExercicio = {
       nome: novoExercicio.nome,
-      categoria: novoExercicio.categoria,
-      kcal_estimado: Number(novoExercicio.kcal),
-      duracao_min_estimado: novoExercicio.duracao ? Number(novoExercicio.duracao) : undefined,
-    })
-    setNovoExercicio({ nome: '', categoria: 'aerobico', kcal: '', duracao: '' })
+      categoria: 'outro',
+      kcal_por_minuto: kcalPorMinuto,
+      duracao_min_estimado: duracao,
+      kcal_estimado: kcalPorMinuto * (duracao ?? 0),
+    }
+    if (editandoExercicioId) await atualizarExercicio(editandoExercicioId, dados)
+    else await adicionarExercicio(dados)
+    cancelarEdicaoExercicio()
   }
 
   return (
@@ -151,42 +162,37 @@ export function GuiaPratoPage() {
         <CardContent className="flex flex-col gap-3">
           {alimentos.map((a) => (
             <div key={a.id} className="flex items-center justify-between text-sm">
-              <div>
-                <p className={a.ativo ? '' : 'text-muted-foreground line-through'}>
-                  {a.nome} — {a.porcao_label} = {a.kcal_por_porcao} kcal
-                  {a.proteina_g_por_porcao != null && `, ${a.proteina_g_por_porcao}g proteína`}
-                  {a.fibra_g_por_porcao != null && `, ${a.fibra_g_por_porcao}g fibra`}
-                </p>
-                <p className="text-xs capitalize text-muted-foreground">{a.categoria}</p>
+              <p className={a.ativo ? '' : 'text-muted-foreground line-through'}>
+                {a.nome} — {a.porcao_label} = {a.kcal_por_porcao} kcal
+                {a.proteina_g_por_porcao != null && `, ${a.proteina_g_por_porcao}g proteína`}
+                {a.fibra_g_por_porcao != null && `, ${a.fibra_g_por_porcao}g fibra`}
+              </p>
+              <div className="flex shrink-0 gap-1">
+                <Button variant="ghost" size="sm" onClick={() => editarAlimento(a)}>
+                  Editar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => alternarAtivo(a.id, !a.ativo)}>
+                  {a.ativo ? 'Desativar' : 'Ativar'}
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => alternarAtivo(a.id, !a.ativo)}>
-                {a.ativo ? 'Desativar' : 'Ativar'}
-              </Button>
             </div>
           ))}
 
-          <form onSubmit={handleAdicionarAlimento} className="grid grid-cols-2 gap-2 pt-2">
+          <form onSubmit={handleSalvarAlimento} className="grid grid-cols-2 gap-2 pt-2">
+            {editandoAlimentoId && (
+              <p className="col-span-2 text-xs font-medium text-primary">Editando "{novoAlimento.nome}"</p>
+            )}
             <Input
               placeholder="Nome (ex: peito de frango)"
               value={novoAlimento.nome}
               onChange={(e) => setNovoAlimento({ ...novoAlimento, nome: e.target.value })}
               className="col-span-2"
             />
-            <select
-              className="col-span-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={novoAlimento.categoria}
-              onChange={(e) => setNovoAlimento({ ...novoAlimento, categoria: e.target.value as VidaAlimentoCategoria })}
-            >
-              {CATEGORIAS.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
             <Input
-              placeholder="Porção (ex: 1 palma)"
+              placeholder="Porção (ex: 100g, 1 unidade, 1 palma)"
               value={novoAlimento.porcao_label}
               onChange={(e) => setNovoAlimento({ ...novoAlimento, porcao_label: e.target.value })}
+              className="col-span-2"
             />
             <div className="flex flex-col gap-1">
               <Label className="text-xs">Kcal por porção</Label>
@@ -228,9 +234,16 @@ export function GuiaPratoPage() {
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, fibra: e.target.value })}
               />
             </div>
-            <Button type="submit" className="col-span-2">
-              Adicionar ao catálogo
-            </Button>
+            <div className="col-span-2 flex gap-2">
+              <Button type="submit" className="flex-1">
+                {editandoAlimentoId ? 'Salvar alterações' : 'Adicionar ao catálogo'}
+              </Button>
+              {editandoAlimentoId && (
+                <Button type="button" variant="outline" onClick={cancelarEdicaoAlimento}>
+                  Cancelar
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -241,63 +254,63 @@ export function GuiaPratoPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <p className="text-xs text-muted-foreground">
-            Cadastre alternativas ao treino previsto (ex: corrida, esporte, mobilidade) com uma estimativa de
-            calorias -- na tela Hoje, qualquer um deles cumpre a missão de treino se bater a meta de kcal do dia.
+            Cadastre por kcal/minuto -- na tela Hoje você informa quanto tempo treinou e o app calcula o gasto total.
+            Qualquer exercício daqui cumpre a missão de treino se bater a meta de kcal do dia.
           </p>
           {exercicios.map((ex) => (
             <div key={ex.id} className="flex items-center justify-between text-sm">
-              <div>
-                <p className={ex.ativo ? '' : 'text-muted-foreground line-through'}>
-                  {ex.nome} — {ex.kcal_estimado} kcal
-                  {ex.duracao_min_estimado != null && ` · ${ex.duracao_min_estimado} min`}
-                </p>
-                <p className="text-xs capitalize text-muted-foreground">{ex.categoria}</p>
+              <p className={ex.ativo ? '' : 'text-muted-foreground line-through'}>
+                {ex.nome} — {ex.kcal_por_minuto ?? '—'} kcal/min
+                {ex.duracao_min_estimado != null && ` · ${ex.duracao_min_estimado} min`}
+              </p>
+              <div className="flex shrink-0 gap-1">
+                <Button variant="ghost" size="sm" onClick={() => editarExercicio(ex)}>
+                  Editar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => alternarAtivoExercicio(ex.id, !ex.ativo)}>
+                  {ex.ativo ? 'Desativar' : 'Ativar'}
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => alternarAtivoExercicio(ex.id, !ex.ativo)}>
-                {ex.ativo ? 'Desativar' : 'Ativar'}
-              </Button>
             </div>
           ))}
 
-          <form onSubmit={handleAdicionarExercicio} className="grid grid-cols-2 gap-2 pt-2">
+          <form onSubmit={handleSalvarExercicio} className="grid grid-cols-2 gap-2 pt-2">
+            {editandoExercicioId && (
+              <p className="col-span-2 text-xs font-medium text-primary">Editando "{novoExercicio.nome}"</p>
+            )}
             <Input
               placeholder="Nome (ex: corrida)"
               value={novoExercicio.nome}
               onChange={(e) => setNovoExercicio({ ...novoExercicio, nome: e.target.value })}
               className="col-span-2"
             />
-            <select
-              className="col-span-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={novoExercicio.categoria}
-              onChange={(e) =>
-                setNovoExercicio({ ...novoExercicio, categoria: e.target.value as VidaExercicioCategoria })
-              }
-            >
-              {CATEGORIAS_EXERCICIO.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Kcal estimado</Label>
+              <Label className="text-xs">Kcal por minuto</Label>
               <Input
                 type="number"
-                value={novoExercicio.kcal}
-                onChange={(e) => setNovoExercicio({ ...novoExercicio, kcal: e.target.value })}
+                step="0.1"
+                value={novoExercicio.kcalPorMinuto}
+                onChange={(e) => setNovoExercicio({ ...novoExercicio, kcalPorMinuto: e.target.value })}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Duração (min)</Label>
+              <Label className="text-xs">Duração típica (min)</Label>
               <Input
                 type="number"
                 value={novoExercicio.duracao}
                 onChange={(e) => setNovoExercicio({ ...novoExercicio, duracao: e.target.value })}
               />
             </div>
-            <Button type="submit" className="col-span-2">
-              Adicionar ao catálogo
-            </Button>
+            <div className="col-span-2 flex gap-2">
+              <Button type="submit" className="flex-1">
+                {editandoExercicioId ? 'Salvar alterações' : 'Adicionar ao catálogo'}
+              </Button>
+              {editandoExercicioId && (
+                <Button type="button" variant="outline" onClick={cancelarEdicaoExercicio}>
+                  Cancelar
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
