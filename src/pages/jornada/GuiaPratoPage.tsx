@@ -177,19 +177,19 @@ export function GuiaPratoPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Carboidrato (g)</Label>
-              <Input
-                type="number"
-                value={novoAlimento.carboidrato}
-                onChange={(e) => setNovoAlimento({ ...novoAlimento, carboidrato: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
               <Label className="text-xs">Gordura (g)</Label>
               <Input
                 type="number"
                 value={novoAlimento.gordura}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, gordura: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Carboidrato (g)</Label>
+              <Input
+                type="number"
+                value={novoAlimento.carboidrato}
+                onChange={(e) => setNovoAlimento({ ...novoAlimento, carboidrato: e.target.value })}
               />
             </div>
             <div className="flex flex-col gap-1">

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Check, Dumbbell, Flame, Footprints, Shield, Sparkles, X, Zap } from 'lucide-react'
+import { AlimentoAutocomplete } from '@/components/AlimentoAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -50,6 +51,12 @@ export function HojePage() {
     almoco: { alimentoId: '', porcoes: '1' },
     lanche: { alimentoId: '', porcoes: '1' },
     jantar: { alimentoId: '', porcoes: '1' },
+  })
+  const [resetTokens, setResetTokens] = useState<Record<VidaRefeicaoTipo, number>>({
+    cafe: 0,
+    almoco: 0,
+    lanche: 0,
+    jantar: 0,
   })
 
   const semanaPesada = registro?.semana_pesada ?? false
@@ -128,6 +135,7 @@ export function HojePage() {
     if (!alimentoId) return
     await adicionarItem(tipo, alimentoId, Number(porcoes) || 1)
     setNovoItem({ ...novoItem, [tipo]: { alimentoId: '', porcoes: '1' } })
+    setResetTokens({ ...resetTokens, [tipo]: resetTokens[tipo] + 1 })
   }
 
   return (
@@ -345,22 +353,14 @@ export function HojePage() {
 
                 {alimentos.length > 0 && (
                   <div className="flex gap-2">
-                    <select
-                      className="flex-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs"
-                      value={novoItem[tipo].alimentoId}
-                      onChange={(e) =>
-                        setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], alimentoId: e.target.value } })
+                    <AlimentoAutocomplete
+                      key={`${tipo}-${resetTokens[tipo]}`}
+                      alimentos={alimentos.filter((a) => a.ativo)}
+                      placeholder="Digite o alimento..."
+                      onSelecionar={(a) =>
+                        setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], alimentoId: a.id } })
                       }
-                    >
-                      <option value="">Adicionar alimento...</option>
-                      {alimentos
-                        .filter((a) => a.ativo)
-                        .map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.nome} ({a.porcao_label})
-                          </option>
-                        ))}
-                    </select>
+                    />
                     <Input
                       type="number"
                       step="0.5"
@@ -371,7 +371,7 @@ export function HojePage() {
                         setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], porcoes: e.target.value } })
                       }
                     />
-                    <Button size="sm" onClick={() => adicionarItemNaRefeicao(tipo)}>
+                    <Button size="sm" disabled={!novoItem[tipo].alimentoId} onClick={() => adicionarItemNaRefeicao(tipo)}>
                       +
                     </Button>
                   </div>
