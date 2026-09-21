@@ -359,6 +359,7 @@ export interface Database {
           proteina_g_por_porcao: number | null
           carboidrato_g_por_porcao: number | null
           gordura_g_por_porcao: number | null
+          fibra_g_por_porcao: number | null
           ativo: boolean
           created_at: string
           updated_at: string

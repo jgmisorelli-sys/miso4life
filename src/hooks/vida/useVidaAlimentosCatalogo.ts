@@ -13,6 +13,7 @@ export interface NovoAlimento {
   proteina_g_por_porcao?: number
   carboidrato_g_por_porcao?: number
   gordura_g_por_porcao?: number
+  fibra_g_por_porcao?: number
 }
 
 export function useVidaAlimentosCatalogo() {

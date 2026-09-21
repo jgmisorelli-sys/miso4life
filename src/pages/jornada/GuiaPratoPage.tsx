@@ -38,6 +38,7 @@ export function GuiaPratoPage() {
     proteina: '',
     carboidrato: '',
     gordura: '',
+    fibra: '',
   })
 
   async function handleRegistrarEvento(e: FormEvent<HTMLFormElement>) {
@@ -58,8 +59,18 @@ export function GuiaPratoPage() {
       proteina_g_por_porcao: novoAlimento.proteina ? Number(novoAlimento.proteina) : undefined,
       carboidrato_g_por_porcao: novoAlimento.carboidrato ? Number(novoAlimento.carboidrato) : undefined,
       gordura_g_por_porcao: novoAlimento.gordura ? Number(novoAlimento.gordura) : undefined,
+      fibra_g_por_porcao: novoAlimento.fibra ? Number(novoAlimento.fibra) : undefined,
     })
-    setNovoAlimento({ nome: '', categoria: 'proteina', porcao_label: '1 palma', kcal: '', proteina: '', carboidrato: '', gordura: '' })
+    setNovoAlimento({
+      nome: '',
+      categoria: 'proteina',
+      porcao_label: '1 palma',
+      kcal: '',
+      proteina: '',
+      carboidrato: '',
+      gordura: '',
+      fibra: '',
+    })
   }
 
   return (
@@ -115,6 +126,8 @@ export function GuiaPratoPage() {
               <div>
                 <p className={a.ativo ? '' : 'text-muted-foreground line-through'}>
                   {a.nome} — {a.porcao_label} = {a.kcal_por_porcao} kcal
+                  {a.proteina_g_por_porcao != null && `, ${a.proteina_g_por_porcao}g proteína`}
+                  {a.fibra_g_por_porcao != null && `, ${a.fibra_g_por_porcao}g fibra`}
                 </p>
                 <p className="text-xs capitalize text-muted-foreground">{a.categoria}</p>
               </div>
@@ -177,6 +190,14 @@ export function GuiaPratoPage() {
                 type="number"
                 value={novoAlimento.gordura}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, gordura: e.target.value })}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Fibra (g)</Label>
+              <Input
+                type="number"
+                value={novoAlimento.fibra}
+                onChange={(e) => setNovoAlimento({ ...novoAlimento, fibra: e.target.value })}
               />
             </div>
             <Button type="submit" className="col-span-2">

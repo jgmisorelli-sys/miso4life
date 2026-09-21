@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, Dumbbell, Footprints, Shield, Sparkles, Zap } from 'lucide-react'
+import { Check, Dumbbell, Flame, Footprints, Shield, Sparkles, X, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -7,8 +7,10 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { cn } from '@/lib/utils'
 import { calcularXpDiario, calcularXpMaximoDiario, type MissionConfig } from '@/lib/rules'
 import { diaSemanaDe, hojeIso } from '@/lib/vida/date'
+import { useVidaAlimentosCatalogo } from '@/hooks/vida/useVidaAlimentosCatalogo'
 import { useVidaMissoesConfig } from '@/hooks/vida/useVidaMissoesConfig'
 import { useVidaMissoesFeitas } from '@/hooks/vida/useVidaMissoesFeitas'
+import { useVidaRefeicaoItensDia } from '@/hooks/vida/useVidaRefeicaoItensDia'
 import { useVidaRefeicoesDia } from '@/hooks/vida/useVidaRefeicoesDia'
 import { useVidaRegistroDia } from '@/hooks/vida/useVidaRegistroDia'
 import { useVidaStreak } from '@/hooks/vida/useVidaStreak'
@@ -39,8 +41,16 @@ export function HojePage() {
   const { sessoes } = useVidaTreinosPlano()
   const { feitos: treinosFeitos, registrar: registrarTreino } = useVidaTreinosFeitos(hoje)
   const { refeicoes, marcar: marcarRefeicao } = useVidaRefeicoesDia(hoje)
+  const { alimentos } = useVidaAlimentosCatalogo()
+  const { totalDia, totalPorTipo, itens: itensRefeicao, adicionarItem, removerItem } = useVidaRefeicaoItensDia(hoje)
 
   const [passosInput, setPassosInput] = useState('')
+  const [novoItem, setNovoItem] = useState<Record<VidaRefeicaoTipo, { alimentoId: string; porcoes: string }>>({
+    cafe: { alimentoId: '', porcoes: '1' },
+    almoco: { alimentoId: '', porcoes: '1' },
+    lanche: { alimentoId: '', porcoes: '1' },
+    jantar: { alimentoId: '', porcoes: '1' },
+  })
 
   const semanaPesada = registro?.semana_pesada ?? false
   const sessaoDeHoje = sessoes.find((s) => s.dia_semana === diaSemana)
@@ -111,6 +121,13 @@ export function HojePage() {
     if (almocoEJantarComPrato && !codigosConcluidos.includes('regra_prato')) {
       await marcar('regra_prato')
     }
+  }
+
+  async function adicionarItemNaRefeicao(tipo: VidaRefeicaoTipo) {
+    const { alimentoId, porcoes } = novoItem[tipo]
+    if (!alimentoId) return
+    await adicionarItem(tipo, alimentoId, Number(porcoes) || 1)
+    setNovoItem({ ...novoItem, [tipo]: { alimentoId: '', porcoes: '1' } })
   }
 
   return (
@@ -267,33 +284,107 @@ export function HojePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Refeições</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Flame className="h-4 w-4" /> Refeições
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent className="flex flex-col gap-4">
+          {itensRefeicao.length > 0 && (
+            <div className="rounded-lg bg-muted p-3 text-sm">
+              <span className="font-medium">{Math.round(totalDia.kcal)} kcal</span>
+              <span className="text-muted-foreground">
+                {' '}
+                · {Math.round(totalDia.proteinaG)} g proteína · {Math.round(totalDia.fibraG)} g fibra hoje
+              </span>
+            </div>
+          )}
+
           {REFEICOES.map(({ tipo, label }) => {
             const refeicao = refeicoes.find((r) => r.tipo_refeicao === tipo)
+            const itensDaRefeicao = itensRefeicao.filter((i) => i.refeicao?.tipo_refeicao === tipo)
+            const totalRefeicao = totalPorTipo.get(tipo)
             return (
-              <div key={tipo} className="flex items-center justify-between">
-                <span className="text-sm">{label}</span>
-                <div className="flex gap-2">
-                  <Button
-                    variant={refeicao?.proteina_ok ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => alternarRefeicao(tipo, 'proteina_ok', !refeicao?.proteina_ok)}
-                  >
-                    Proteína
-                  </Button>
-                  <Button
-                    variant={refeicao?.prato_ok ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => alternarRefeicao(tipo, 'prato_ok', !refeicao?.prato_ok)}
-                  >
-                    Prato
-                  </Button>
+              <div key={tipo} className="flex flex-col gap-2 border-t border-border pt-3 first:border-t-0 first:pt-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    {label}
+                    {totalRefeicao && totalRefeicao.kcal > 0 && (
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        ({Math.round(totalRefeicao.kcal)} kcal)
+                      </span>
+                    )}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={refeicao?.proteina_ok ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => alternarRefeicao(tipo, 'proteina_ok', !refeicao?.proteina_ok)}
+                    >
+                      Proteína
+                    </Button>
+                    <Button
+                      variant={refeicao?.prato_ok ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => alternarRefeicao(tipo, 'prato_ok', !refeicao?.prato_ok)}
+                    >
+                      Prato
+                    </Button>
+                  </div>
                 </div>
+
+                {itensDaRefeicao.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      {item.alimento?.nome} × {item.porcoes} ({item.alimento?.porcao_label})
+                    </span>
+                    <button type="button" onClick={() => removerItem(item.id)} aria-label="Remover item">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                {alimentos.length > 0 && (
+                  <div className="flex gap-2">
+                    <select
+                      className="flex-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                      value={novoItem[tipo].alimentoId}
+                      onChange={(e) =>
+                        setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], alimentoId: e.target.value } })
+                      }
+                    >
+                      <option value="">Adicionar alimento...</option>
+                      {alimentos
+                        .filter((a) => a.ativo)
+                        .map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.nome} ({a.porcao_label})
+                          </option>
+                        ))}
+                    </select>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      className="w-16 px-2 text-xs"
+                      value={novoItem[tipo].porcoes}
+                      onChange={(e) =>
+                        setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], porcoes: e.target.value } })
+                      }
+                    />
+                    <Button size="sm" onClick={() => adicionarItemNaRefeicao(tipo)}>
+                      +
+                    </Button>
+                  </div>
+                )}
               </div>
             )
           })}
+
+          {alimentos.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Nenhum alimento cadastrado ainda. Adicione em Jornada → Guia → Catálogo de alimentos.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

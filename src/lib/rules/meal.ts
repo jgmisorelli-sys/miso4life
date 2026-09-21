@@ -5,6 +5,7 @@ export interface ItemRefeicao {
     proteinaGPorPorcao: number | null
     carboidratoGPorPorcao: number | null
     gorduraGPorPorcao: number | null
+    fibraGPorPorcao: number | null
   }
 }
 
@@ -13,6 +14,7 @@ export interface TotalRefeicao {
   proteinaG: number
   carboidratoG: number
   gorduraG: number
+  fibraG: number
 }
 
 /**
@@ -27,7 +29,8 @@ export function calcularTotalRefeicao(itens: ItemRefeicao[]): TotalRefeicao {
       proteinaG: total.proteinaG + item.porcoes * (item.alimento.proteinaGPorPorcao ?? 0),
       carboidratoG: total.carboidratoG + item.porcoes * (item.alimento.carboidratoGPorPorcao ?? 0),
       gorduraG: total.gorduraG + item.porcoes * (item.alimento.gorduraGPorPorcao ?? 0),
+      fibraG: total.fibraG + item.porcoes * (item.alimento.fibraGPorPorcao ?? 0),
     }),
-    { kcal: 0, proteinaG: 0, carboidratoG: 0, gorduraG: 0 },
+    { kcal: 0, proteinaG: 0, carboidratoG: 0, gorduraG: 0, fibraG: 0 },
   )
 }

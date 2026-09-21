@@ -6,30 +6,49 @@ describe('calcularTotalRefeicao', () => {
     const total = calcularTotalRefeicao([
       {
         porcoes: 1.5,
-        alimento: { kcalPorPorcao: 100, proteinaGPorPorcao: 20, carboidratoGPorPorcao: 0, gorduraGPorPorcao: 2 },
+        alimento: {
+          kcalPorPorcao: 100,
+          proteinaGPorPorcao: 20,
+          carboidratoGPorPorcao: 0,
+          gorduraGPorPorcao: 2,
+          fibraGPorPorcao: 1,
+        },
       },
       {
         porcoes: 1,
-        alimento: { kcalPorPorcao: 150, proteinaGPorPorcao: 0, carboidratoGPorPorcao: 30, gorduraGPorPorcao: 0 },
+        alimento: {
+          kcalPorPorcao: 150,
+          proteinaGPorPorcao: 0,
+          carboidratoGPorPorcao: 30,
+          gorduraGPorPorcao: 0,
+          fibraGPorPorcao: 2,
+        },
       },
     ])
     expect(total.kcal).toBe(300)
     expect(total.proteinaG).toBe(30)
     expect(total.carboidratoG).toBe(30)
     expect(total.gorduraG).toBe(3)
+    expect(total.fibraG).toBe(3.5)
   })
 
   it('trata macros nulos como zero', () => {
     const total = calcularTotalRefeicao([
       {
         porcoes: 1,
-        alimento: { kcalPorPorcao: 80, proteinaGPorPorcao: null, carboidratoGPorPorcao: null, gorduraGPorPorcao: null },
+        alimento: {
+          kcalPorPorcao: 80,
+          proteinaGPorPorcao: null,
+          carboidratoGPorPorcao: null,
+          gorduraGPorPorcao: null,
+          fibraGPorPorcao: null,
+        },
       },
     ])
-    expect(total).toEqual({ kcal: 80, proteinaG: 0, carboidratoG: 0, gorduraG: 0 })
+    expect(total).toEqual({ kcal: 80, proteinaG: 0, carboidratoG: 0, gorduraG: 0, fibraG: 0 })
   })
 
   it('retorna zerado para refeição sem itens', () => {
-    expect(calcularTotalRefeicao([])).toEqual({ kcal: 0, proteinaG: 0, carboidratoG: 0, gorduraG: 0 })
+    expect(calcularTotalRefeicao([])).toEqual({ kcal: 0, proteinaG: 0, carboidratoG: 0, gorduraG: 0, fibraG: 0 })
   })
 })
