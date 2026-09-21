@@ -10,6 +10,7 @@ const TABS = [
   { to: '/jornada/conquistas', label: 'Conquistas', end: false },
   { to: '/jornada/guia', label: 'Guia', end: false },
   { to: '/jornada/medir', label: 'Medir', end: false },
+  { to: '/jornada/configuracoes', label: 'Config', end: false },
 ]
 
 export function JornadaLayout() {

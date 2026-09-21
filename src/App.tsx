@@ -16,6 +16,7 @@ import { SprintPage } from '@/pages/jornada/SprintPage'
 import { RecompensasPage } from '@/pages/jornada/RecompensasPage'
 import { ConquistasPage } from '@/pages/jornada/ConquistasPage'
 import { GuiaPratoPage } from '@/pages/jornada/GuiaPratoPage'
+import { ConfiguracoesPage } from '@/pages/jornada/ConfiguracoesPage'
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
@@ -45,6 +46,7 @@ function ProtectedRoutes() {
           <Route path="recompensas" element={<RecompensasPage />} />
           <Route path="conquistas" element={<ConquistasPage />} />
           <Route path="guia" element={<GuiaPratoPage />} />
+          <Route path="configuracoes" element={<ConfiguracoesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
