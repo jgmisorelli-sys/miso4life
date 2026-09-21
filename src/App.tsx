@@ -10,6 +10,12 @@ import { ProfilePage } from '@/pages/ProfilePage'
 import { JornadaLayout } from '@/pages/jornada/JornadaLayout'
 import { HojePage } from '@/pages/jornada/HojePage'
 import { SemanaPage } from '@/pages/jornada/SemanaPage'
+import { ProgressoPage } from '@/pages/jornada/ProgressoPage'
+import { MedirPage } from '@/pages/jornada/MedirPage'
+import { SprintPage } from '@/pages/jornada/SprintPage'
+import { RecompensasPage } from '@/pages/jornada/RecompensasPage'
+import { ConquistasPage } from '@/pages/jornada/ConquistasPage'
+import { GuiaPratoPage } from '@/pages/jornada/GuiaPratoPage'
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
@@ -33,6 +39,12 @@ function ProtectedRoutes() {
         <Route path="jornada" element={<JornadaLayout />}>
           <Route index element={<HojePage />} />
           <Route path="semana" element={<SemanaPage />} />
+          <Route path="progresso" element={<ProgressoPage />} />
+          <Route path="medir" element={<MedirPage />} />
+          <Route path="sprint" element={<SprintPage />} />
+          <Route path="recompensas" element={<RecompensasPage />} />
+          <Route path="conquistas" element={<ConquistasPage />} />
+          <Route path="guia" element={<GuiaPratoPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

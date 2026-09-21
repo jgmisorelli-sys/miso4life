@@ -1,11 +1,14 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { Check, Dumbbell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { cn } from '@/lib/utils'
 import { avaliarRecompensaSemanal } from '@/lib/rules'
+import { useAuth } from '@/lib/auth-context'
 import { diaSemanaDe, hojeIso, semanaAtualIntervalo } from '@/lib/vida/date'
+import { garantirRecompensaSemanal } from '@/lib/vida/rewardsSync'
 import { useVidaMissoesConfig } from '@/hooks/vida/useVidaMissoesConfig'
 import { useVidaMissoesFeitas } from '@/hooks/vida/useVidaMissoesFeitas'
 import { useVidaTreinosFeitos } from '@/hooks/vida/useVidaTreinosFeitos'
@@ -15,6 +18,7 @@ const META_XP_SEMANAL = 650
 const META_TREINOS_SEMANAL = 4
 
 export function SemanaPage() {
+  const { user } = useAuth()
   const { inicio, fim } = semanaAtualIntervalo()
   const hoje = hojeIso()
 
@@ -31,6 +35,11 @@ export function SemanaPage() {
   })
 
   const diasComTreinoFeito = new Set(treinosFeitos.map((t) => t.data))
+
+  useEffect(() => {
+    if (!user) return
+    garantirRecompensaSemanal(user.id, inicio, xpSemana, treinosConcluidos)
+  }, [user, inicio, xpSemana, treinosConcluidos])
 
   async function marcarMissaoSemanal(codigo: string, xp: number) {
     await marcar(hoje, codigo, xp)
@@ -114,9 +123,11 @@ export function SemanaPage() {
         </CardContent>
       </Card>
 
-      <Button variant="outline" size="sm" className="self-start" disabled>
-        Recompensa: resgate manual (tela Recompensas — Fase 5)
-      </Button>
+      <Link to="/jornada/recompensas">
+        <Button variant="outline" size="sm">
+          Ver recompensas
+        </Button>
+      </Link>
     </div>
   )
 }
