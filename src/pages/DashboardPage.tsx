@@ -3,9 +3,11 @@ import { Coffee, Droplets, Flame, GlassWater } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { QuickAddButton } from '@/components/QuickAddButton'
+import { hojeIso } from '@/lib/vida/date'
 import { useProfile } from '@/hooks/useProfile'
 import { useDailyLogs } from '@/hooks/useDailyLogs'
 import { useWorkoutLogs } from '@/hooks/useWorkoutLogs'
+import { useVidaRefeicaoItensDia } from '@/hooks/vida/useVidaRefeicaoItensDia'
 import { useActiveDietPlan, useActiveWorkoutPlan, todayDayOfWeek } from '@/hooks/useActivePlanDetails'
 
 const MEAL_LABELS: Record<string, string> = {
@@ -18,10 +20,17 @@ const MEAL_LABELS: Record<string, string> = {
 
 export function DashboardPage() {
   const { profile } = useProfile()
-  const { totalCalories, totalWaterMl, totalCoffee, addWaterLog, addCoffeeLog } = useDailyLogs()
+  const { totalCalories: totalCaloriesRegistro, totalWaterMl, totalCoffee, addWaterLog, addCoffeeLog } = useDailyLogs()
+  const { totalDia: totalRefeicoesJornada } = useVidaRefeicaoItensDia(hojeIso())
   const { logs: workoutLogs } = useWorkoutLogs()
   const { todayItems } = useActiveDietPlan()
   const { days: workoutDays } = useActiveWorkoutPlan()
+
+  // Soma as duas fontes de registro de alimentação: a tela Registrar
+  // antiga (food_logs) e o catálogo da Jornada (vida_refeicoes_itens) --
+  // sem isso, o resumo do dia ficava desatualizado em relação ao que foi
+  // lançado pela Jornada.
+  const totalCalories = totalCaloriesRegistro + Math.round(totalRefeicoesJornada.kcal)
 
   const calorieGoal = profile?.daily_calorie_goal ?? 0
   const waterGoal = profile?.daily_water_ml_goal ?? 2500
