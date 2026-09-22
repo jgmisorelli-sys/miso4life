@@ -70,6 +70,7 @@ function FoodForm() {
   const [proteinG, setProteinG] = useState('')
   const [carbsG, setCarbsG] = useState('')
   const [fatG, setFatG] = useState('')
+  const [fiberG, setFiberG] = useState('')
 
   function preencherComAlimento(a: AlimentoRow) {
     setQuantity(a.porcao_label)
@@ -77,6 +78,7 @@ function FoodForm() {
     setProteinG(a.proteina_g_por_porcao != null ? String(a.proteina_g_por_porcao) : '')
     setCarbsG(a.carboidrato_g_por_porcao != null ? String(a.carboidrato_g_por_porcao) : '')
     setFatG(a.gordura_g_por_porcao != null ? String(a.gordura_g_por_porcao) : '')
+    setFiberG(a.fibra_g_por_porcao != null ? String(a.fibra_g_por_porcao) : '')
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -92,6 +94,7 @@ function FoodForm() {
       protein_g: proteinG ? Number(proteinG) : undefined,
       carbs_g: carbsG ? Number(carbsG) : undefined,
       fat_g: fatG ? Number(fatG) : undefined,
+      fiber_g: fiberG ? Number(fiberG) : undefined,
     })
     setSaving(false)
     setSaved(true)
@@ -101,6 +104,7 @@ function FoodForm() {
     setProteinG('')
     setCarbsG('')
     setFatG('')
+    setFiberG('')
     setResetToken((t) => t + 1)
   }
 
@@ -215,6 +219,17 @@ function FoodForm() {
                 min="0"
                 value={fatG}
                 onChange={(e) => setFatG(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fiber_g">Fibra (g)</Label>
+              <Input
+                id="fiber_g"
+                name="fiber_g"
+                type="number"
+                min="0"
+                value={fiberG}
+                onChange={(e) => setFiberG(e.target.value)}
               />
             </div>
           </div>

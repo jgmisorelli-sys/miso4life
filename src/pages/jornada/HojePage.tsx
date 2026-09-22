@@ -9,14 +9,13 @@ import { cn } from '@/lib/utils'
 import { calcularXpDiario, calcularXpMaximoDiario, type MissionConfig } from '@/lib/rules'
 import { diaSemanaDe, hojeIso } from '@/lib/vida/date'
 import { useLogsDoDia } from '@/hooks/useLogsDoDia'
+import { useWorkoutLogs } from '@/hooks/useWorkoutLogs'
 import { useVidaMissoesConfig } from '@/hooks/vida/useVidaMissoesConfig'
 import { useVidaMissoesFeitas } from '@/hooks/vida/useVidaMissoesFeitas'
 import { useVidaPerfil } from '@/hooks/vida/useVidaPerfil'
-import { useVidaRefeicaoItensDia } from '@/hooks/vida/useVidaRefeicaoItensDia'
 import { useVidaRefeicoesDia } from '@/hooks/vida/useVidaRefeicoesDia'
 import { useVidaRegistroDia } from '@/hooks/vida/useVidaRegistroDia'
 import { useVidaStreak } from '@/hooks/vida/useVidaStreak'
-import { useVidaTreinosFeitos } from '@/hooks/vida/useVidaTreinosFeitos'
 import { useVidaTreinosPlano } from '@/hooks/vida/useVidaTreinosPlano'
 import type { VidaRefeicaoTipo } from '@/types/database'
 
@@ -41,24 +40,22 @@ export function HojePage() {
   const { registro, salvar: salvarRegistro } = useVidaRegistroDia(hoje)
   const { perfil } = useVidaPerfil()
   const { sessoes } = useVidaTreinosPlano()
-  const { feitos: treinosFeitos, kcalTotal: kcalTreinoJornada, registrar: registrarTreino } = useVidaTreinosFeitos(hoje)
+  const { addWorkoutLog } = useWorkoutLogs()
   const { refeicoes, marcar: marcarRefeicao } = useVidaRefeicoesDia(hoje)
-  const { totalDia: totalJornada } = useVidaRefeicaoItensDia(hoje)
-  const { totalCaloriesLegado, totalProteinaLegado, totalKcalTreinoLegado } = useLogsDoDia(hoje)
+  const { totalCaloriesLegado, totalProteinaLegado, totalKcalTreinoLegado, workoutLogs } = useLogsDoDia(hoje)
 
   const [passosInput, setPassosInput] = useState('')
 
   const semanaPesada = registro?.semana_pesada ?? false
   const sessaoDeHoje = sessoes.find((s) => s.dia_semana === diaSemana)
   const metaKcalTreino = sessaoDeHoje?.kcal_estimado ?? 0
-  // Todo registro de alimentação/treino agora acontece na aba Registrar;
-  // aqui só somamos os totais (Registrar + histórico do catálogo) pra
-  // mostrar o status, sem duplicar a interface de lançamento.
-  const kcalExercicioHoje = totalKcalTreinoLegado + kcalTreinoJornada
-  const caloriasHoje = totalCaloriesLegado + totalJornada.kcal
-  const proteinaHoje = totalProteinaLegado + totalJornada.proteinaG
-  const treinoJaFeito = treinosFeitos.length > 0
+  // Todo registro de alimentação/treino acontece na aba Registrar; aqui só
+  // mostramos o status, sem duplicar a interface de lançamento.
+  const kcalExercicioHoje = totalKcalTreinoLegado
+  const caloriasHoje = totalCaloriesLegado
+  const proteinaHoje = totalProteinaLegado
   const metaKcalAtingida = metaKcalTreino > 0 && kcalExercicioHoje >= metaKcalTreino
+  const treinoJaFeito = workoutLogs.some((log) => log.exercise_name === sessaoDeHoje?.nome_sessao) || metaKcalAtingida
   const minimoJaCumprido = codigosConcluidos.includes('minimo_dia')
   const ontemFalhou = streak?.dia_anterior_falhou ?? false
 
@@ -104,11 +101,12 @@ export function HojePage() {
   }
 
   async function marcarTreinoFeito() {
-    if (treinoJaFeito) return
-    await registrarTreino(hoje, {
-      sessaoId: sessaoDeHoje?.id ?? null,
-      kcalRealizado: sessaoDeHoje?.kcal_estimado ?? null,
-      versaoMinima: semanaPesada,
+    if (treinoJaFeito || !sessaoDeHoje) return
+    await addWorkoutLog({
+      workout_type: 'aerobic',
+      exercise_name: sessaoDeHoje.nome_sessao,
+      duration_min: sessaoDeHoje.duracao_min_estimado ?? undefined,
+      calories: sessaoDeHoje.kcal_estimado ?? undefined,
     })
     if (!codigosConcluidos.includes('treino_previsto')) await marcar('treino_previsto')
   }

@@ -86,6 +86,7 @@ export interface Database {
           protein_g: number | null
           carbs_g: number | null
           fat_g: number | null
+          fiber_g: number | null
           logged_at: string
           created_at: string
         }

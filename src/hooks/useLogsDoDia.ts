@@ -94,6 +94,7 @@ export function useLogsDoDia(data: string) {
   const totalProteinaLegado = foodLogs.reduce((sum, log) => sum + (log.protein_g ?? 0), 0)
   const totalCarboidratoLegado = foodLogs.reduce((sum, log) => sum + (log.carbs_g ?? 0), 0)
   const totalGorduraLegado = foodLogs.reduce((sum, log) => sum + (log.fat_g ?? 0), 0)
+  const totalFibraLegado = foodLogs.reduce((sum, log) => sum + (log.fiber_g ?? 0), 0)
   const totalWaterMl = waterLogs.reduce((sum, log) => sum + log.amount_ml, 0)
   const totalCoffee = coffeeLogs.reduce((sum, log) => sum + log.amount, 0)
   const totalKcalTreinoLegado = workoutLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0)
@@ -105,6 +106,7 @@ export function useLogsDoDia(data: string) {
     totalProteinaLegado,
     totalCarboidratoLegado,
     totalGorduraLegado,
+    totalFibraLegado,
     totalWaterMl,
     totalCoffee,
     totalKcalTreinoLegado,

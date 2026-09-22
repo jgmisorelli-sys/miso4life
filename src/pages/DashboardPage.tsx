@@ -22,11 +22,8 @@ import { cn } from '@/lib/utils'
 import { diaSemanaDe, hojeIso } from '@/lib/vida/date'
 import { useProfile } from '@/hooks/useProfile'
 import { useLogsDoDia } from '@/hooks/useLogsDoDia'
-import { useWorkoutLogs } from '@/hooks/useWorkoutLogs'
 import { useVidaPerfil } from '@/hooks/vida/useVidaPerfil'
-import { useVidaRefeicaoItensDia } from '@/hooks/vida/useVidaRefeicaoItensDia'
 import { useVidaRegistroDia } from '@/hooks/vida/useVidaRegistroDia'
-import { useVidaTreinosFeitos } from '@/hooks/vida/useVidaTreinosFeitos'
 import { useVidaTreinosPlano } from '@/hooks/vida/useVidaTreinosPlano'
 import { useActiveDietPlan, useActiveWorkoutPlan, todayDayOfWeek } from '@/hooks/useActivePlanDetails'
 import type { VidaMetaTipo } from '@/types/database'
@@ -123,37 +120,33 @@ export function DashboardPage() {
   const { profile } = useProfile()
   const { perfil } = useVidaPerfil()
   const {
+    workoutLogs,
     totalCaloriesLegado,
     totalProteinaLegado,
     totalCarboidratoLegado,
     totalGorduraLegado,
+    totalFibraLegado,
     totalWaterMl,
     totalCoffee,
     totalKcalTreinoLegado,
     addWaterLog,
     addCoffeeLog,
   } = useLogsDoDia(data)
-  const { totalDia: totalJornada } = useVidaRefeicaoItensDia(data)
   const { registro, salvar: salvarRegistro } = useVidaRegistroDia(data)
   const { sessoes } = useVidaTreinosPlano()
-  const { kcalTotal: kcalTreinoJornada } = useVidaTreinosFeitos(data)
-  const { logs: workoutLogs } = useWorkoutLogs()
   const { todayItems } = useActiveDietPlan()
   const { days: workoutDays } = useActiveWorkoutPlan()
 
   const [sonoInput, setSonoInput] = useState('')
 
-  // Soma as duas fontes de registro de alimentação: a tela Registrar
-  // antiga (food_logs) e o catálogo da Jornada (vida_refeicoes_itens).
-  const caloriasIngeridas = totalCaloriesLegado + totalJornada.kcal
-  const proteinaIngerida = totalProteinaLegado + totalJornada.proteinaG
-  const gorduraIngerida = totalGorduraLegado + totalJornada.gorduraG
-  const carboidratoIngerido = totalCarboidratoLegado + totalJornada.carboidratoG
-  const fibraIngerida = totalJornada.fibraG
-
-  // Soma as duas fontes de registro de treino: a tela Registrar antiga
-  // (workout_logs) e o catálogo de exercícios da Jornada.
-  const kcalExercicioRealizado = totalKcalTreinoLegado + kcalTreinoJornada
+  // Aba Registrar é a única fonte de alimentação/treino -- nada mais é
+  // somado aqui, pra não arriscar contar duas vezes o mesmo lançamento.
+  const caloriasIngeridas = totalCaloriesLegado
+  const proteinaIngerida = totalProteinaLegado
+  const gorduraIngerida = totalGorduraLegado
+  const carboidratoIngerido = totalCarboidratoLegado
+  const fibraIngerida = totalFibraLegado
+  const kcalExercicioRealizado = totalKcalTreinoLegado
 
   // Saldo do dia: positivo = superávit (comeu mais do que gastou),
   // negativo = déficit (objetivo do plano de emagrecimento).

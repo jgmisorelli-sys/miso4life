@@ -66,6 +66,7 @@ export function useDailyLogs() {
       protein_g?: number
       carbs_g?: number
       fat_g?: number
+      fiber_g?: number
     }) => {
       if (!user) return
       const { error } = await supabase.from('food_logs').insert({ ...entry, user_id: user.id })
