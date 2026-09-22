@@ -52,5 +52,15 @@ export function useWorkoutLogs() {
     [user, refresh],
   )
 
-  return { logs, loading, addWorkoutLog, refresh }
+  const removeWorkoutLog = useCallback(
+    async (id: string) => {
+      if (!user) return
+      const { error } = await supabase.from('workout_logs').delete().eq('id', id)
+      if (!error) await refresh()
+      return { error }
+    },
+    [user, refresh],
+  )
+
+  return { logs, loading, addWorkoutLog, removeWorkoutLog, refresh }
 }

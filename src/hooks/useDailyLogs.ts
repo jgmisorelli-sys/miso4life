@@ -95,6 +95,16 @@ export function useDailyLogs() {
     [user, refresh],
   )
 
+  const removeFoodLog = useCallback(
+    async (id: string) => {
+      if (!user) return
+      const { error } = await supabase.from('food_logs').delete().eq('id', id)
+      if (!error) await refresh()
+      return { error }
+    },
+    [user, refresh],
+  )
+
   const totalCalories = foodLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0)
   const totalWaterMl = waterLogs.reduce((sum, log) => sum + log.amount_ml, 0)
   const totalCoffee = coffeeLogs.reduce((sum, log) => sum + log.amount, 0)
@@ -110,6 +120,7 @@ export function useDailyLogs() {
     addFoodLog,
     addWaterLog,
     addCoffeeLog,
+    removeFoodLog,
     refresh,
   }
 }

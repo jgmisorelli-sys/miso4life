@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
+import { X } from 'lucide-react'
 import { AlimentoAutocomplete } from '@/components/AlimentoAutocomplete'
 import { ExercicioAutocomplete } from '@/components/ExercicioAutocomplete'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -56,7 +57,7 @@ export function QuickLogPage() {
 }
 
 function FoodForm() {
-  const { addFoodLog } = useDailyLogs()
+  const { foodLogs, addFoodLog, removeFoodLog } = useDailyLogs()
   const { alimentos } = useVidaAlimentosCatalogo()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -104,7 +105,33 @@ function FoodForm() {
   }
 
   return (
-    <Card>
+    <div className="flex flex-col gap-4">
+      {foodLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Já registrado hoje</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {foodLogs.map((log) => (
+              <div key={log.id} className="flex items-center justify-between text-sm">
+                <span>
+                  <span className="text-muted-foreground">
+                    {MEAL_OPTIONS.find((o) => o.value === log.meal_type)?.label}:{' '}
+                  </span>
+                  {log.food_name}
+                  {log.quantity && <span className="text-muted-foreground"> ({log.quantity})</span>}
+                  {log.calories != null && <span className="text-muted-foreground"> — {log.calories} kcal</span>}
+                </span>
+                <button type="button" onClick={() => removeFoodLog(log.id)} aria-label="Remover registro">
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -197,12 +224,13 @@ function FoodForm() {
           {saved && <p className="text-sm text-muted-foreground">Registrado!</p>}
         </form>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   )
 }
 
 function WorkoutForm() {
-  const { addWorkoutLog } = useWorkoutLogs()
+  const { logs: workoutLogs, addWorkoutLog, removeWorkoutLog } = useWorkoutLogs()
   const { exercicios } = useVidaExerciciosCatalogo()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -258,7 +286,30 @@ function WorkoutForm() {
   }
 
   return (
-    <Card>
+    <div className="flex flex-col gap-4">
+      {workoutLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Já registrado hoje</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {workoutLogs.map((log) => (
+              <div key={log.id} className="flex items-center justify-between text-sm">
+                <span>
+                  {log.exercise_name}
+                  {log.duration_min != null && <span className="text-muted-foreground"> — {log.duration_min} min</span>}
+                  {log.calories != null && <span className="text-muted-foreground"> · {log.calories} kcal</span>}
+                </span>
+                <button type="button" onClick={() => removeWorkoutLog(log.id)} aria-label="Remover registro">
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -332,6 +383,7 @@ function WorkoutForm() {
           {saved && <p className="text-sm text-muted-foreground">Registrado!</p>}
         </form>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   )
 }
