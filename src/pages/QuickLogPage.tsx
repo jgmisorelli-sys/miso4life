@@ -71,14 +71,37 @@ function FoodForm() {
   const [carbsG, setCarbsG] = useState('')
   const [fatG, setFatG] = useState('')
   const [fiberG, setFiberG] = useState('')
+  const [portions, setPortions] = useState('1')
+  const [alimentoBase, setAlimentoBase] = useState<AlimentoRow | null>(null)
+
+  // Valores do catálogo são por porção; multiplica pela quantidade de porções.
+  function aplicarPorcoes(a: AlimentoRow, qtd: number) {
+    const fmt = (v: number | null, casas: number) =>
+      v != null ? String(Math.round(v * qtd * 10 ** casas) / 10 ** casas) : ''
+    setCalories(fmt(a.kcal_por_porcao, 0))
+    setProteinG(fmt(a.proteina_g_por_porcao, 1))
+    setCarbsG(fmt(a.carboidrato_g_por_porcao, 1))
+    setFatG(fmt(a.gordura_g_por_porcao, 1))
+    setFiberG(fmt(a.fibra_g_por_porcao, 1))
+  }
 
   function preencherComAlimento(a: AlimentoRow) {
+    setAlimentoBase(a)
     setQuantity(a.porcao_label)
-    setCalories(String(a.kcal_por_porcao))
-    setProteinG(a.proteina_g_por_porcao != null ? String(a.proteina_g_por_porcao) : '')
-    setCarbsG(a.carboidrato_g_por_porcao != null ? String(a.carboidrato_g_por_porcao) : '')
-    setFatG(a.gordura_g_por_porcao != null ? String(a.gordura_g_por_porcao) : '')
-    setFiberG(a.fibra_g_por_porcao != null ? String(a.fibra_g_por_porcao) : '')
+    const qtd = Number(portions.replace(',', '.'))
+    aplicarPorcoes(a, qtd > 0 ? qtd : 1)
+  }
+
+  function handlePortionsChange(valor: string) {
+    setPortions(valor)
+    const qtd = Number(valor.replace(',', '.'))
+    if (alimentoBase && qtd > 0) aplicarPorcoes(alimentoBase, qtd)
+  }
+
+  function handleFoodNameChange(texto: string) {
+    setFoodName(texto)
+    // Texto livre diferente do alimento escolhido: deixa de escalar pelo catálogo.
+    setAlimentoBase((base) => (base && texto !== base.nome ? null : base))
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -86,10 +109,13 @@ function FoodForm() {
     if (!foodName) return
     setSaving(true)
     setSaved(false)
+    const qtd = Number(portions.replace(',', '.'))
+    const quantidadeTexto =
+      qtd > 0 && qtd !== 1 ? `${portions.replace('.', ',')} × ${quantity || 'porção'}` : quantity
     await addFoodLog({
       meal_type: mealType,
       food_name: foodName,
-      quantity: quantity || undefined,
+      quantity: quantidadeTexto || undefined,
       calories: calories ? Number(calories) : undefined,
       protein_g: proteinG ? Number(proteinG) : undefined,
       carbs_g: carbsG ? Number(carbsG) : undefined,
@@ -105,6 +131,8 @@ function FoodForm() {
     setCarbsG('')
     setFatG('')
     setFiberG('')
+    setPortions('1')
+    setAlimentoBase(null)
     setResetToken((t) => t + 1)
   }
 
@@ -162,20 +190,40 @@ function FoodForm() {
               alimentos={alimentos.filter((a) => a.ativo)}
               placeholder="Digite pra buscar no catálogo, ou digite livre"
               className="h-10 text-sm"
-              onTextoChange={setFoodName}
+              onTextoChange={handleFoodNameChange}
               onSelecionar={preencherComAlimento}
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="quantity">Quantidade</Label>
-            <Input
-              id="quantity"
-              name="quantity"
-              placeholder="ex: 100g, 1 unidade"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            />
+          <div className="grid grid-cols-[6rem_1fr] gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="portions">Quantidade</Label>
+              <Input
+                id="portions"
+                name="portions"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.5"
+                value={portions}
+                onChange={(e) => handlePortionsChange(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="quantity">Porção</Label>
+              <Input
+                id="quantity"
+                name="quantity"
+                placeholder="ex: 100g, 1 unidade"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </div>
           </div>
+          {alimentoBase && (
+            <p className="-mt-2 text-xs text-muted-foreground">
+              Calorias e macros calculados para {portions || 0} × porção do catálogo.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="calories">Calorias</Label>
