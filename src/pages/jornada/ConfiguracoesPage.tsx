@@ -12,7 +12,7 @@ import { usePushNotifications } from '@/hooks/vida/usePushNotifications'
 import { useVidaFamiliaParticipantes } from '@/hooks/vida/useVidaFamiliaParticipantes'
 import { useVidaLembretesConfig } from '@/hooks/vida/useVidaLembretesConfig'
 import { useVidaPerfil } from '@/hooks/vida/useVidaPerfil'
-import type { VidaLembreteTipo } from '@/types/database'
+import type { VidaLembreteTipo, VidaMetaTipo } from '@/types/database'
 
 const NOME_LEMBRETE: Record<VidaLembreteTipo, string> = {
   manha: 'Missão do dia (manhã)',
@@ -21,6 +21,22 @@ const NOME_LEMBRETE: Record<VidaLembreteTipo, string> = {
   resumo_semana: 'Resumo da semana (domingo)',
   pre_bioimpedancia: 'Antes da bioimpedância',
 }
+
+interface CampoMeta {
+  chave: 'calorias' | 'proteina' | 'gordura' | 'carboidrato' | 'fibra' | 'passos' | 'sono'
+  label: string
+  step?: string
+}
+
+const CAMPOS_META: CampoMeta[] = [
+  { chave: 'calorias', label: 'Calorias (kcal)' },
+  { chave: 'proteina', label: 'Proteína (g)' },
+  { chave: 'gordura', label: 'Gordura (g)' },
+  { chave: 'carboidrato', label: 'Carboidrato (g)' },
+  { chave: 'fibra', label: 'Fibra (g)' },
+  { chave: 'passos', label: 'Passos' },
+  { chave: 'sono', label: 'Sono (horas)', step: '0.5' },
+]
 
 export function ConfiguracoesPage() {
   const { user } = useAuth()
@@ -33,26 +49,46 @@ export function ConfiguracoesPage() {
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [excluindo, setExcluindo] = useState(false)
   const [salvandoMetas, setSalvandoMetas] = useState(false)
-  const [metas, setMetas] = useState({
-    meta_calorias_kcal: '',
-    meta_proteina_g: '',
-    meta_gordura_g: '',
-    meta_carboidrato_g: '',
-    meta_fibra_g: '',
-    meta_passos: '',
-    meta_sono_horas: '',
+  const [tmbInput, setTmbInput] = useState('')
+  const [metas, setMetas] = useState<Record<CampoMeta['chave'], string>>({
+    calorias: '',
+    proteina: '',
+    gordura: '',
+    carboidrato: '',
+    fibra: '',
+    passos: '',
+    sono: '',
+  })
+  const [tipos, setTipos] = useState<Record<CampoMeta['chave'], VidaMetaTipo>>({
+    calorias: 'maximo',
+    proteina: 'minimo',
+    gordura: 'maximo',
+    carboidrato: 'maximo',
+    fibra: 'minimo',
+    passos: 'minimo',
+    sono: 'minimo',
   })
 
   useEffect(() => {
     if (!perfil) return
+    setTmbInput(perfil.tmb_kcal != null ? String(perfil.tmb_kcal) : '')
     setMetas({
-      meta_calorias_kcal: String(perfil.meta_calorias_kcal),
-      meta_proteina_g: String(perfil.meta_proteina_g),
-      meta_gordura_g: String(perfil.meta_gordura_g),
-      meta_carboidrato_g: String(perfil.meta_carboidrato_g),
-      meta_fibra_g: String(perfil.meta_fibra_g),
-      meta_passos: String(perfil.meta_passos),
-      meta_sono_horas: String(perfil.meta_sono_horas),
+      calorias: String(perfil.meta_calorias_kcal),
+      proteina: String(perfil.meta_proteina_g),
+      gordura: String(perfil.meta_gordura_g),
+      carboidrato: String(perfil.meta_carboidrato_g),
+      fibra: String(perfil.meta_fibra_g),
+      passos: String(perfil.meta_passos),
+      sono: String(perfil.meta_sono_horas),
+    })
+    setTipos({
+      calorias: perfil.meta_calorias_tipo,
+      proteina: perfil.meta_proteina_tipo,
+      gordura: perfil.meta_gordura_tipo,
+      carboidrato: perfil.meta_carboidrato_tipo,
+      fibra: perfil.meta_fibra_tipo,
+      passos: perfil.meta_passos_tipo,
+      sono: perfil.meta_sono_tipo,
     })
   }, [perfil])
 
@@ -60,13 +96,21 @@ export function ConfiguracoesPage() {
     e.preventDefault()
     setSalvandoMetas(true)
     await salvarPerfil({
-      meta_calorias_kcal: Number(metas.meta_calorias_kcal),
-      meta_proteina_g: Number(metas.meta_proteina_g),
-      meta_gordura_g: Number(metas.meta_gordura_g),
-      meta_carboidrato_g: Number(metas.meta_carboidrato_g),
-      meta_fibra_g: Number(metas.meta_fibra_g),
-      meta_passos: Number(metas.meta_passos),
-      meta_sono_horas: Number(metas.meta_sono_horas),
+      tmb_kcal: tmbInput ? Number(tmbInput) : null,
+      meta_calorias_kcal: Number(metas.calorias),
+      meta_calorias_tipo: tipos.calorias,
+      meta_proteina_g: Number(metas.proteina),
+      meta_proteina_tipo: tipos.proteina,
+      meta_gordura_g: Number(metas.gordura),
+      meta_gordura_tipo: tipos.gordura,
+      meta_carboidrato_g: Number(metas.carboidrato),
+      meta_carboidrato_tipo: tipos.carboidrato,
+      meta_fibra_g: Number(metas.fibra),
+      meta_fibra_tipo: tipos.fibra,
+      meta_passos: Number(metas.passos),
+      meta_passos_tipo: tipos.passos,
+      meta_sono_horas: Number(metas.sono),
+      meta_sono_tipo: tipos.sono,
     })
     setSalvandoMetas(false)
   }
@@ -115,72 +159,45 @@ export function ConfiguracoesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSalvarMetas} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSalvarMetas} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="meta_calorias_kcal">Calorias (kcal)</Label>
-              <Input
-                id="meta_calorias_kcal"
-                type="number"
-                value={metas.meta_calorias_kcal}
-                onChange={(e) => setMetas({ ...metas, meta_calorias_kcal: e.target.value })}
-              />
+              <Label htmlFor="tmb_kcal">Taxa metabólica basal (kcal/dia)</Label>
+              <Input id="tmb_kcal" type="number" value={tmbInput} onChange={(e) => setTmbInput(e.target.value)} />
+              <p className="text-xs text-muted-foreground">
+                Quanto seu corpo queima parado. Usada pra calcular o saldo calórico do dia no Dashboard.
+              </p>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="meta_proteina_g">Proteína (g)</Label>
-              <Input
-                id="meta_proteina_g"
-                type="number"
-                value={metas.meta_proteina_g}
-                onChange={(e) => setMetas({ ...metas, meta_proteina_g: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="meta_gordura_g">Gordura (g)</Label>
-              <Input
-                id="meta_gordura_g"
-                type="number"
-                value={metas.meta_gordura_g}
-                onChange={(e) => setMetas({ ...metas, meta_gordura_g: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="meta_carboidrato_g">Carboidrato (g)</Label>
-              <Input
-                id="meta_carboidrato_g"
-                type="number"
-                value={metas.meta_carboidrato_g}
-                onChange={(e) => setMetas({ ...metas, meta_carboidrato_g: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="meta_fibra_g">Fibra (g)</Label>
-              <Input
-                id="meta_fibra_g"
-                type="number"
-                value={metas.meta_fibra_g}
-                onChange={(e) => setMetas({ ...metas, meta_fibra_g: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="meta_passos">Passos</Label>
-              <Input
-                id="meta_passos"
-                type="number"
-                value={metas.meta_passos}
-                onChange={(e) => setMetas({ ...metas, meta_passos: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="meta_sono_horas">Sono (horas)</Label>
-              <Input
-                id="meta_sono_horas"
-                type="number"
-                step="0.5"
-                value={metas.meta_sono_horas}
-                onChange={(e) => setMetas({ ...metas, meta_sono_horas: e.target.value })}
-              />
-            </div>
-            <Button type="submit" className="col-span-2" disabled={salvandoMetas}>
+
+            {CAMPOS_META.map(({ chave, label, step }) => (
+              <div key={chave} className="grid grid-cols-3 items-end gap-2">
+                <div className="col-span-2 flex flex-col gap-1.5">
+                  <Label htmlFor={`meta_${chave}`}>{label}</Label>
+                  <Input
+                    id={`meta_${chave}`}
+                    type="number"
+                    step={step}
+                    value={metas[chave]}
+                    onChange={(e) => setMetas({ ...metas, [chave]: e.target.value })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`tipo_${chave}`} className="text-xs">
+                    Tipo
+                  </Label>
+                  <select
+                    id={`tipo_${chave}`}
+                    className="h-10 rounded-md border border-input bg-background px-2 text-xs"
+                    value={tipos[chave]}
+                    onChange={(e) => setTipos({ ...tipos, [chave]: e.target.value as VidaMetaTipo })}
+                  >
+                    <option value="minimo">Mínimo</option>
+                    <option value="maximo">Máximo</option>
+                  </select>
+                </div>
+              </div>
+            ))}
+
+            <Button type="submit" disabled={salvandoMetas}>
               Salvar metas
             </Button>
           </form>

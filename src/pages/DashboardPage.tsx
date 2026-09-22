@@ -12,11 +12,13 @@ import {
   Footprints,
   GlassWater,
   Moon,
+  Scale,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ProgressBar } from '@/components/ui/progress-bar'
+import { cn } from '@/lib/utils'
 import { diaSemanaDe, hojeIso } from '@/lib/vida/date'
 import { useProfile } from '@/hooks/useProfile'
 import { useLogsDoDia } from '@/hooks/useLogsDoDia'
@@ -27,6 +29,7 @@ import { useVidaRegistroDia } from '@/hooks/vida/useVidaRegistroDia'
 import { useVidaTreinosFeitos } from '@/hooks/vida/useVidaTreinosFeitos'
 import { useVidaTreinosPlano } from '@/hooks/vida/useVidaTreinosPlano'
 import { useActiveDietPlan, useActiveWorkoutPlan, todayDayOfWeek } from '@/hooks/useActivePlanDetails'
+import type { VidaMetaTipo } from '@/types/database'
 
 const MEAL_LABELS: Record<string, string> = {
   breakfast: 'Café da manhã',
@@ -56,23 +59,31 @@ function LinhaNutriente({
   meta,
   unidade,
   cor,
+  tipo,
 }: {
   label: string
   valor: number
   meta: number
   unidade: string
   cor: Cor
+  tipo: VidaMetaTipo
 }) {
+  const estourouMaximo = tipo === 'maximo' && meta > 0 && valor > meta
+  const bateuMinimo = tipo === 'minimo' && meta > 0 && valor >= meta
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between text-sm">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">
+        <span className="text-muted-foreground">
+          {label} <span className="text-xs">({tipo === 'minimo' ? 'mín.' : 'máx.'})</span>
+        </span>
+        <span className={cn('font-medium', estourouMaximo && 'text-destructive')}>
           {Math.round(valor)}
           {unidade} <span className="text-xs font-normal text-muted-foreground">/ {meta}{unidade}</span>
+          {estourouMaximo && ' · acima do máximo'}
+          {bateuMinimo && ' · meta batida'}
         </span>
       </div>
-      <ProgressBar value={valor} max={meta || 1} barClassName={CORES[cor].bar} />
+      <ProgressBar value={valor} max={meta || 1} barClassName={estourouMaximo ? 'bg-destructive' : CORES[cor].bar} />
     </div>
   )
 }
@@ -144,6 +155,10 @@ export function DashboardPage() {
   // (workout_logs) e o catálogo de exercícios da Jornada.
   const kcalExercicioRealizado = totalKcalTreinoLegado + kcalTreinoJornada
 
+  // Saldo do dia: positivo = superávit (comeu mais do que gastou),
+  // negativo = déficit (objetivo do plano de emagrecimento).
+  const saldoCalorico = perfil?.tmb_kcal != null ? caloriasIngeridas - (perfil.tmb_kcal + kcalExercicioRealizado) : 0
+
   const metaCalorias = perfil?.meta_calorias_kcal ?? profile?.daily_calorie_goal ?? 1950
   const metaProteina = perfil?.meta_proteina_g ?? 150
   const metaGordura = perfil?.meta_gordura_g ?? 62
@@ -202,13 +217,80 @@ export function DashboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          <LinhaNutriente label="Calorias" valor={caloriasIngeridas} meta={metaCalorias} unidade=" kcal" cor="calories" />
-          <LinhaNutriente label="Proteína" valor={proteinaIngerida} meta={metaProteina} unidade="g" cor="protein" />
-          <LinhaNutriente label="Gordura" valor={gorduraIngerida} meta={metaGordura} unidade="g" cor="fat" />
-          <LinhaNutriente label="Carboidrato" valor={carboidratoIngerido} meta={metaCarboidrato} unidade="g" cor="carbs" />
-          <LinhaNutriente label="Fibras" valor={fibraIngerida} meta={metaFibra} unidade="g" cor="fiber" />
+          <LinhaNutriente
+            label="Calorias"
+            valor={caloriasIngeridas}
+            meta={metaCalorias}
+            unidade=" kcal"
+            cor="calories"
+            tipo={perfil?.meta_calorias_tipo ?? 'maximo'}
+          />
+          <LinhaNutriente
+            label="Proteína"
+            valor={proteinaIngerida}
+            meta={metaProteina}
+            unidade="g"
+            cor="protein"
+            tipo={perfil?.meta_proteina_tipo ?? 'minimo'}
+          />
+          <LinhaNutriente
+            label="Gordura"
+            valor={gorduraIngerida}
+            meta={metaGordura}
+            unidade="g"
+            cor="fat"
+            tipo={perfil?.meta_gordura_tipo ?? 'maximo'}
+          />
+          <LinhaNutriente
+            label="Carboidrato"
+            valor={carboidratoIngerido}
+            meta={metaCarboidrato}
+            unidade="g"
+            cor="carbs"
+            tipo={perfil?.meta_carboidrato_tipo ?? 'maximo'}
+          />
+          <LinhaNutriente
+            label="Fibras"
+            valor={fibraIngerida}
+            meta={metaFibra}
+            unidade="g"
+            cor="fiber"
+            tipo={perfil?.meta_fibra_tipo ?? 'minimo'}
+          />
         </CardContent>
       </Card>
+
+      {perfil?.tmb_kcal != null && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Scale className="h-4 w-4" /> Saldo calórico
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-xs text-muted-foreground">Consumido</p>
+              <p className="text-lg font-semibold">{Math.round(caloriasIngeridas)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Gasto (basal + treino)</p>
+              <p className="text-lg font-semibold">{Math.round(perfil.tmb_kcal + kcalExercicioRealizado)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Saldo</p>
+              <p
+                className={cn(
+                  'text-lg font-semibold',
+                  saldoCalorico > 0 ? 'text-destructive' : 'text-primary',
+                )}
+              >
+                {saldoCalorico > 0 ? '+' : ''}
+                {Math.round(saldoCalorico)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <Card>

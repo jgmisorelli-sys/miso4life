@@ -10,7 +10,7 @@ import { useDailyLogs } from '@/hooks/useDailyLogs'
 import { useWorkoutLogs } from '@/hooks/useWorkoutLogs'
 import { useVidaAlimentosCatalogo, type AlimentoRow } from '@/hooks/vida/useVidaAlimentosCatalogo'
 import { useVidaExerciciosCatalogo, type ExercicioRow } from '@/hooks/vida/useVidaExerciciosCatalogo'
-import type { MealType, WorkoutType } from '@/types/database'
+import type { MealType } from '@/types/database'
 
 const TABS = ['Alimentação', 'Treino'] as const
 type Tab = (typeof TABS)[number]
@@ -204,7 +204,6 @@ function FoodForm() {
 function WorkoutForm() {
   const { addWorkoutLog } = useWorkoutLogs()
   const { exercicios } = useVidaExerciciosCatalogo()
-  const [type, setType] = useState<WorkoutType>('strength')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [resetToken, setResetToken] = useState(0)
@@ -231,8 +230,13 @@ function WorkoutForm() {
     if (!exerciseName) return
     setSaving(true)
     setSaved(false)
+    // Sem distinção de tipo na tela -- guarda como "aerobic" quando é
+    // sobretudo cardio (tem duração/distância) e "strength" quando é
+    // sobretudo carga (tem séries/carga), só pra manter o dado coerente
+    // no banco. A tela não pede essa escolha ao usuário.
+    const workoutType = weightKg || sets ? 'strength' : 'aerobic'
     await addWorkoutLog({
-      workout_type: type,
+      workout_type: workoutType,
       exercise_name: exerciseName,
       sets: sets ? Number(sets) : undefined,
       reps: reps || undefined,
@@ -257,25 +261,8 @@ function WorkoutForm() {
     <Card>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={type === 'strength' ? 'default' : 'outline'}
-              onClick={() => setType('strength')}
-            >
-              Força
-            </Button>
-            <Button
-              type="button"
-              variant={type === 'aerobic' ? 'default' : 'outline'}
-              onClick={() => setType('aerobic')}
-            >
-              Aeróbico
-            </Button>
-          </div>
-
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="exercise_name">{type === 'strength' ? 'Exercício' : 'Atividade'}</Label>
+            <Label htmlFor="exercise_name">Exercício</Label>
             <ExercicioAutocomplete
               key={resetToken}
               exercicios={exercicios.filter((e) => e.ativo)}
@@ -286,63 +273,58 @@ function WorkoutForm() {
             />
           </div>
 
-          {type === 'strength' ? (
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="sets">Séries</Label>
-                <Input id="sets" type="number" min="0" value={sets} onChange={(e) => setSets(e.target.value)} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="reps">Reps</Label>
-                <Input id="reps" placeholder="8-10" value={reps} onChange={(e) => setReps(e.target.value)} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="weight_kg">Carga (kg)</Label>
-                <Input
-                  id="weight_kg"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={weightKg}
-                  onChange={(e) => setWeightKg(e.target.value)}
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="duration_min">Duração (min)</Label>
+              <Input
+                id="duration_min"
+                type="number"
+                min="0"
+                value={durationMin}
+                onChange={(e) => setDurationMin(e.target.value)}
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="duration_min">Duração (min)</Label>
-                <Input
-                  id="duration_min"
-                  type="number"
-                  min="0"
-                  value={durationMin}
-                  onChange={(e) => setDurationMin(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="distance_km">Distância (km)</Label>
-                <Input
-                  id="distance_km"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={distanceKm}
-                  onChange={(e) => setDistanceKm(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="calories">Calorias</Label>
-                <Input
-                  id="calories"
-                  type="number"
-                  min="0"
-                  value={calories}
-                  onChange={(e) => setCalories(e.target.value)}
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="calories">Calorias</Label>
+              <Input
+                id="calories"
+                type="number"
+                min="0"
+                value={calories}
+                onChange={(e) => setCalories(e.target.value)}
+              />
             </div>
-          )}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="distance_km">Distância (km)</Label>
+              <Input
+                id="distance_km"
+                type="number"
+                min="0"
+                step="0.1"
+                value={distanceKm}
+                onChange={(e) => setDistanceKm(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="weight_kg">Carga (kg)</Label>
+              <Input
+                id="weight_kg"
+                type="number"
+                min="0"
+                step="0.5"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="sets">Séries</Label>
+              <Input id="sets" type="number" min="0" value={sets} onChange={(e) => setSets(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="reps">Reps</Label>
+              <Input id="reps" placeholder="8-10" value={reps} onChange={(e) => setReps(e.target.value)} />
+            </div>
+          </div>
 
           <Button type="submit" disabled={saving}>
             Salvar treino

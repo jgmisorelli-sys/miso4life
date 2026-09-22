@@ -58,6 +58,15 @@ export function SprintPage() {
         {fase && <p className="text-sm text-muted-foreground">Fase {fase.numero}: {fase.nome}</p>}
       </div>
 
+      <Card className="bg-muted">
+        <CardContent className="pt-6 text-sm text-muted-foreground">
+          Um sprint é um bloco de 10 dias com um tema específico (ex: "proteína e prato", "progressão de força").
+          Cada fase do plano (como a Fase 1, de 60 dias) é dividida em 6 sprints seguidos -- é só uma forma de
+          quebrar a fase em metas curtas, já que você rende melhor com desafios de poucos dias. O XP que você ganha
+          nas missões do dia a dia conta pra esse sprint; batendo a meta de XP dele, libera um prêmio.
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="flex flex-col gap-3 pt-6">
           <div className="flex items-baseline justify-between">

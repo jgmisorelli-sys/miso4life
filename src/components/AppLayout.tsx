@@ -1,17 +1,32 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { CalendarDays, Home, LineChart, User, Dumbbell, Leaf, Target, Trophy } from 'lucide-react'
+import {
+  Award,
+  BookOpen,
+  CalendarDays,
+  Dumbbell,
+  Gift,
+  Home,
+  LineChart,
+  Leaf,
+  Target,
+  Trophy,
+  User,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Navegação achatada: as seções mais usadas da Jornada ganham ícone
-// próprio na barra principal em vez de ficarem escondidas atrás de um
-// único item "Jornada". Sprint, Recompensas, Conquistas, Guia e Medir
-// continuam acessíveis pela aba interna da própria Jornada.
+// Navegação achatada e rolável: as seções da Jornada ganham ícone próprio
+// na barra principal em vez de ficarem escondidas atrás de um único item
+// "Jornada". Recompensas e Conquistas vêm logo no início -- são o que
+// mais motiva o uso diário.
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, end: true },
   { to: '/jornada', label: 'Hoje', icon: Trophy, end: true },
+  { to: '/jornada/recompensas', label: 'Recompensas', icon: Gift, end: false },
+  { to: '/jornada/conquistas', label: 'Conquistas', icon: Award, end: false },
   { to: '/jornada/semana', label: 'Semana', icon: CalendarDays, end: false },
   { to: '/registro', label: 'Registrar', icon: Dumbbell, end: false },
   { to: '/jornada/progresso', label: 'Progresso', icon: LineChart, end: false },
+  { to: '/jornada/guia', label: 'Guia', icon: BookOpen, end: false },
   { to: '/jornada/configuracoes', label: 'Metas', icon: Target, end: false },
   { to: '/perfil', label: 'Perfil', icon: User, end: false },
 ]
@@ -30,7 +45,7 @@ export function AppLayout() {
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto flex max-w-3xl gap-1 border-t border-border bg-card/95 px-2 py-2 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto flex max-w-3xl gap-1 overflow-x-auto border-t border-border bg-card/95 px-2 py-2 backdrop-blur">
         {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -38,7 +53,7 @@ export function AppLayout() {
             end={end}
             className={({ isActive }) =>
               cn(
-                'flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-muted-foreground transition-colors',
+                'flex w-16 shrink-0 flex-col items-center gap-1 rounded-xl py-2 text-xs text-muted-foreground transition-colors',
                 isActive && 'bg-secondary font-medium text-primary',
               )
             }

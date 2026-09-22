@@ -19,6 +19,7 @@ export type VidaFotoAngulo = 'frente' | 'lado' | 'costas'
 export type VidaRefeicaoTipo = 'cafe' | 'almoco' | 'lanche' | 'jantar'
 export type VidaAlimentoCategoria = 'proteina' | 'carboidrato' | 'gordura' | 'vegetal' | 'outro'
 export type VidaExercicioCategoria = 'forca' | 'aerobico' | 'mobilidade' | 'esporte' | 'outro'
+export type VidaMetaTipo = 'minimo' | 'maximo'
 export type VidaDiaSemana =
   | 'segunda'
   | 'terca'
@@ -244,13 +245,21 @@ export interface Database {
           data_inicio_plano: string
           fuso_horario: string
           aceitou_aviso_saude: boolean
+          tmb_kcal: number | null
           meta_calorias_kcal: number
+          meta_calorias_tipo: VidaMetaTipo
           meta_proteina_g: number
+          meta_proteina_tipo: VidaMetaTipo
           meta_gordura_g: number
+          meta_gordura_tipo: VidaMetaTipo
           meta_carboidrato_g: number
+          meta_carboidrato_tipo: VidaMetaTipo
           meta_fibra_g: number
+          meta_fibra_tipo: VidaMetaTipo
           meta_passos: number
+          meta_passos_tipo: VidaMetaTipo
           meta_sono_horas: number
+          meta_sono_tipo: VidaMetaTipo
           created_at: string
           updated_at: string
         }

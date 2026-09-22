@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
-import { Check, Dumbbell, Flame, Footprints, Shield, Sparkles, X, Zap } from 'lucide-react'
-import { AlimentoAutocomplete } from '@/components/AlimentoAutocomplete'
-import { ExercicioAutocomplete } from '@/components/ExercicioAutocomplete'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Check, Dumbbell, Flame, Footprints, Shield, Sparkles, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,8 +8,7 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { cn } from '@/lib/utils'
 import { calcularXpDiario, calcularXpMaximoDiario, type MissionConfig } from '@/lib/rules'
 import { diaSemanaDe, hojeIso } from '@/lib/vida/date'
-import { useVidaAlimentosCatalogo } from '@/hooks/vida/useVidaAlimentosCatalogo'
-import { useVidaExerciciosCatalogo } from '@/hooks/vida/useVidaExerciciosCatalogo'
+import { useLogsDoDia } from '@/hooks/useLogsDoDia'
 import { useVidaMissoesConfig } from '@/hooks/vida/useVidaMissoesConfig'
 import { useVidaMissoesFeitas } from '@/hooks/vida/useVidaMissoesFeitas'
 import { useVidaPerfil } from '@/hooks/vida/useVidaPerfil'
@@ -38,40 +36,29 @@ export function HojePage() {
   const diaSemana = diaSemanaDe(hoje)
 
   const { diarias, loading: loadingMissoes } = useVidaMissoesConfig()
-  const { perfil } = useVidaPerfil()
   const { codigosConcluidos, marcar: marcarMissao } = useVidaMissoesFeitas(hoje)
   const { streak, marcarMinimoCumprido } = useVidaStreak()
   const { registro, salvar: salvarRegistro } = useVidaRegistroDia(hoje)
+  const { perfil } = useVidaPerfil()
   const { sessoes } = useVidaTreinosPlano()
-  const { feitos: treinosFeitos, kcalTotal: kcalTreinoHoje, registrar: registrarTreino, removerFeito: removerTreino } =
-    useVidaTreinosFeitos(hoje)
-  const { exercicios } = useVidaExerciciosCatalogo()
+  const { feitos: treinosFeitos, kcalTotal: kcalTreinoJornada, registrar: registrarTreino } = useVidaTreinosFeitos(hoje)
   const { refeicoes, marcar: marcarRefeicao } = useVidaRefeicoesDia(hoje)
-  const { alimentos } = useVidaAlimentosCatalogo()
-  const { totalDia, totalPorTipo, itens: itensRefeicao, adicionarItem, removerItem } = useVidaRefeicaoItensDia(hoje)
+  const { totalDia: totalJornada } = useVidaRefeicaoItensDia(hoje)
+  const { totalCaloriesLegado, totalProteinaLegado, totalKcalTreinoLegado } = useLogsDoDia(hoje)
 
   const [passosInput, setPassosInput] = useState('')
-  const [exercicioSelecionadoId, setExercicioSelecionadoId] = useState('')
-  const [minutosExercicio, setMinutosExercicio] = useState('')
-  const [resetTokenExercicio, setResetTokenExercicio] = useState(0)
-  const [novoItem, setNovoItem] = useState<Record<VidaRefeicaoTipo, { alimentoId: string; porcoes: string }>>({
-    cafe: { alimentoId: '', porcoes: '1' },
-    almoco: { alimentoId: '', porcoes: '1' },
-    lanche: { alimentoId: '', porcoes: '1' },
-    jantar: { alimentoId: '', porcoes: '1' },
-  })
-  const [resetTokens, setResetTokens] = useState<Record<VidaRefeicaoTipo, number>>({
-    cafe: 0,
-    almoco: 0,
-    lanche: 0,
-    jantar: 0,
-  })
 
   const semanaPesada = registro?.semana_pesada ?? false
   const sessaoDeHoje = sessoes.find((s) => s.dia_semana === diaSemana)
   const metaKcalTreino = sessaoDeHoje?.kcal_estimado ?? 0
+  // Todo registro de alimentação/treino agora acontece na aba Registrar;
+  // aqui só somamos os totais (Registrar + histórico do catálogo) pra
+  // mostrar o status, sem duplicar a interface de lançamento.
+  const kcalExercicioHoje = totalKcalTreinoLegado + kcalTreinoJornada
+  const caloriasHoje = totalCaloriesLegado + totalJornada.kcal
+  const proteinaHoje = totalProteinaLegado + totalJornada.proteinaG
   const treinoJaFeito = treinosFeitos.length > 0
-  const metaKcalAtingida = metaKcalTreino > 0 && kcalTreinoHoje >= metaKcalTreino
+  const metaKcalAtingida = metaKcalTreino > 0 && kcalExercicioHoje >= metaKcalTreino
   const minimoJaCumprido = codigosConcluidos.includes('minimo_dia')
   const ontemFalhou = streak?.dia_anterior_falhou ?? false
 
@@ -126,28 +113,6 @@ export function HojePage() {
     if (!codigosConcluidos.includes('treino_previsto')) await marcar('treino_previsto')
   }
 
-  async function adicionarExercicioAlternativo() {
-    const exercicio = exercicios.find((e) => e.id === exercicioSelecionadoId)
-    if (!exercicio) return
-    const minutos = Number(minutosExercicio) || exercicio.duracao_min_estimado || 0
-    const kcalRealizado = exercicio.kcal_por_minuto != null ? exercicio.kcal_por_minuto * minutos : exercicio.kcal_estimado
-
-    await registrarTreino(hoje, {
-      exercicioCatalogoId: exercicio.id,
-      kcalRealizado,
-      duracaoRealMin: minutos || null,
-    })
-    setExercicioSelecionadoId('')
-    setMinutosExercicio('')
-    setResetTokenExercicio((t) => t + 1)
-
-    const totalDepois = kcalTreinoHoje + kcalRealizado
-    const bateuMeta = metaKcalTreino === 0 || totalDepois >= metaKcalTreino
-    if (bateuMeta && !codigosConcluidos.includes('treino_previsto')) {
-      await marcar('treino_previsto')
-    }
-  }
-
   async function alternarRefeicao(tipo: VidaRefeicaoTipo, campo: 'proteina_ok' | 'prato_ok', valor: boolean) {
     await marcarRefeicao(tipo, campo, valor)
 
@@ -166,13 +131,15 @@ export function HojePage() {
     }
   }
 
-  async function adicionarItemNaRefeicao(tipo: VidaRefeicaoTipo) {
-    const { alimentoId, porcoes } = novoItem[tipo]
-    if (!alimentoId) return
-    await adicionarItem(tipo, alimentoId, Number(porcoes) || 1)
-    setNovoItem({ ...novoItem, [tipo]: { alimentoId: '', porcoes: '1' } })
-    setResetTokens({ ...resetTokens, [tipo]: resetTokens[tipo] + 1 })
-  }
+  // Se o gasto calórico do dia (lançado na aba Registrar) já bate a meta
+  // do treino previsto, a missão fecha sozinha -- sem precisar apertar
+  // nenhum botão.
+  useEffect(() => {
+    if (metaKcalAtingida && !codigosConcluidos.includes('treino_previsto')) {
+      marcar('treino_previsto')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metaKcalAtingida, codigosConcluidos])
 
   return (
     <div className="flex flex-col gap-4">
@@ -320,75 +287,28 @@ export function HojePage() {
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 {semanaPesada ? 'Movimento de 15 minutos' : `${sessaoDeHoje.duracao_min_estimado ?? '—'} min`}
-                {metaKcalTreino > 0 && ` · meta ${metaKcalTreino} kcal`}
               </p>
               <Button variant={treinoJaFeito ? 'secondary' : 'default'} disabled={treinoJaFeito} onClick={marcarTreinoFeito}>
                 {treinoJaFeito ? 'Feito' : 'Marcar feito'}
               </Button>
             </div>
           )}
-
-          {kcalTreinoHoje > 0 && (
+          {metaKcalTreino > 0 && (
             <div className="rounded-lg bg-muted p-3 text-sm">
-              <span className="font-medium">{Math.round(kcalTreinoHoje)} kcal gastas hoje</span>
-              {metaKcalTreino > 0 && (
-                <span className="text-muted-foreground">
-                  {' '}
-                  / {metaKcalTreino} kcal {metaKcalAtingida && '· meta batida'}
-                </span>
-              )}
+              <span className="font-medium">{Math.round(kcalExercicioHoje)} kcal</span>
+              <span className="text-muted-foreground">
+                {' '}
+                / {metaKcalTreino} kcal hoje {metaKcalAtingida && '· meta batida'}
+              </span>
             </div>
           )}
-
-          {treinosFeitos.map((feito) => {
-            const exercicioFeito = exercicios.find((e) => e.id === feito.exercicio_catalogo_id)
-            const nome = feito.sessao_id === sessaoDeHoje?.id ? sessaoDeHoje.nome_sessao : exercicioFeito?.nome
-            if (!nome) return null
-            return (
-              <div key={feito.id} className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  {nome} {feito.kcal_realizado != null && `· ${feito.kcal_realizado} kcal`}
-                </span>
-                <button type="button" onClick={() => removerTreino(feito.id)} aria-label="Remover treino">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )
-          })}
-
-          <div>
-            <p className="mb-2 text-xs text-muted-foreground">
-              Fez outro exercício em vez do previsto? Adicione aqui -- o que conta é o gasto calórico.
-            </p>
-            {exercicios.length > 0 ? (
-              <div className="flex gap-2">
-                <ExercicioAutocomplete
-                  key={resetTokenExercicio}
-                  exercicios={exercicios.filter((e) => e.ativo)}
-                  placeholder="Digite o exercício..."
-                  className="text-xs"
-                  onSelecionar={(e) => {
-                    setExercicioSelecionadoId(e.id)
-                    setMinutosExercicio(e.duracao_min_estimado ? String(e.duracao_min_estimado) : '')
-                  }}
-                />
-                <Input
-                  type="number"
-                  placeholder="min"
-                  className="w-16 px-2 text-xs"
-                  value={minutosExercicio}
-                  onChange={(ev) => setMinutosExercicio(ev.target.value)}
-                />
-                <Button size="sm" disabled={!exercicioSelecionadoId} onClick={adicionarExercicioAlternativo}>
-                  +
-                </Button>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Nenhum exercício cadastrado ainda. Adicione em Jornada → Guia → Catálogo de exercícios.
-              </p>
-            )}
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Fez outro exercício em vez do previsto? Registre em{' '}
+            <Link to="/registro" className="text-primary underline">
+              Registrar
+            </Link>{' '}
+            -- o que conta é o gasto calórico total do dia.
+          </p>
         </CardContent>
       </Card>
 
@@ -398,96 +318,47 @@ export function HojePage() {
             <Flame className="h-4 w-4" /> Refeições
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {itensRefeicao.length > 0 && (
-            <div className="rounded-lg bg-muted p-3 text-sm">
-              <span className="font-medium">{Math.round(totalDia.kcal)} kcal</span>
-              <span className="text-muted-foreground">
-                {' '}
-                · {Math.round(totalDia.proteinaG)} g proteína · {Math.round(totalDia.fibraG)} g fibra hoje
-              </span>
-            </div>
-          )}
+        <CardContent className="flex flex-col gap-3">
+          <div className="rounded-lg bg-muted p-3 text-sm">
+            <span className="font-medium">{Math.round(caloriasHoje)} kcal</span>
+            {perfil?.meta_calorias_kcal != null && (
+              <span className="text-muted-foreground"> / {perfil.meta_calorias_kcal} kcal</span>
+            )}
+            <span className="text-muted-foreground"> · {Math.round(proteinaHoje)} g proteína hoje</span>
+          </div>
 
           {REFEICOES.map(({ tipo, label }) => {
             const refeicao = refeicoes.find((r) => r.tipo_refeicao === tipo)
-            const itensDaRefeicao = itensRefeicao.filter((i) => i.refeicao?.tipo_refeicao === tipo)
-            const totalRefeicao = totalPorTipo.get(tipo)
             return (
-              <div key={tipo} className="flex flex-col gap-2 border-t border-border pt-3 first:border-t-0 first:pt-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {label}
-                    {totalRefeicao && totalRefeicao.kcal > 0 && (
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        ({Math.round(totalRefeicao.kcal)} kcal)
-                      </span>
-                    )}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={refeicao?.proteina_ok ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => alternarRefeicao(tipo, 'proteina_ok', !refeicao?.proteina_ok)}
-                    >
-                      Proteína
-                    </Button>
-                    <Button
-                      variant={refeicao?.prato_ok ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => alternarRefeicao(tipo, 'prato_ok', !refeicao?.prato_ok)}
-                    >
-                      Prato
-                    </Button>
-                  </div>
+              <div key={tipo} className="flex items-center justify-between">
+                <span className="text-sm">{label}</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant={refeicao?.proteina_ok ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => alternarRefeicao(tipo, 'proteina_ok', !refeicao?.proteina_ok)}
+                  >
+                    Proteína
+                  </Button>
+                  <Button
+                    variant={refeicao?.prato_ok ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => alternarRefeicao(tipo, 'prato_ok', !refeicao?.prato_ok)}
+                  >
+                    Prato
+                  </Button>
                 </div>
-
-                {itensDaRefeicao.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      {item.alimento?.nome} × {item.porcoes} ({item.alimento?.porcao_label})
-                    </span>
-                    <button type="button" onClick={() => removerItem(item.id)} aria-label="Remover item">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-
-                {alimentos.length > 0 && (
-                  <div className="flex gap-2">
-                    <AlimentoAutocomplete
-                      key={`${tipo}-${resetTokens[tipo]}`}
-                      alimentos={alimentos.filter((a) => a.ativo)}
-                      placeholder="Digite o alimento..."
-                      className="text-xs"
-                      onSelecionar={(a) =>
-                        setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], alimentoId: a.id } })
-                      }
-                    />
-                    <Input
-                      type="number"
-                      step="0.5"
-                      min="0.5"
-                      className="w-16 px-2 text-xs"
-                      value={novoItem[tipo].porcoes}
-                      onChange={(e) =>
-                        setNovoItem({ ...novoItem, [tipo]: { ...novoItem[tipo], porcoes: e.target.value } })
-                      }
-                    />
-                    <Button size="sm" disabled={!novoItem[tipo].alimentoId} onClick={() => adicionarItemNaRefeicao(tipo)}>
-                      +
-                    </Button>
-                  </div>
-                )}
               </div>
             )
           })}
 
-          {alimentos.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              Nenhum alimento cadastrado ainda. Adicione em Jornada → Guia → Catálogo de alimentos.
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Registre o que comeu em{' '}
+            <Link to="/registro" className="text-primary underline">
+              Registrar
+            </Link>
+            .
+          </p>
         </CardContent>
       </Card>
     </div>
