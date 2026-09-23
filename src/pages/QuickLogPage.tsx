@@ -238,6 +238,7 @@ function FoodForm() {
                 name="calories"
                 type="number"
                 min="0"
+                step="any"
                 value={calories}
                 onChange={(e) => setCalories(e.target.value)}
               />
@@ -249,6 +250,7 @@ function FoodForm() {
                 name="protein_g"
                 type="number"
                 min="0"
+                step="any"
                 value={proteinG}
                 onChange={(e) => setProteinG(e.target.value)}
               />
@@ -260,6 +262,7 @@ function FoodForm() {
                 name="carbs_g"
                 type="number"
                 min="0"
+                step="any"
                 value={carbsG}
                 onChange={(e) => setCarbsG(e.target.value)}
               />
@@ -271,6 +274,7 @@ function FoodForm() {
                 name="fat_g"
                 type="number"
                 min="0"
+                step="any"
                 value={fatG}
                 onChange={(e) => setFatG(e.target.value)}
               />
@@ -282,6 +286,7 @@ function FoodForm() {
                 name="fiber_g"
                 type="number"
                 min="0"
+                step="any"
                 value={fiberG}
                 onChange={(e) => setFiberG(e.target.value)}
               />
@@ -407,6 +412,7 @@ function WorkoutForm() {
                 id="duration_min"
                 type="number"
                 min="0"
+                step="any"
                 value={durationMin}
                 onChange={(e) => setDurationMin(e.target.value)}
               />
@@ -417,6 +423,7 @@ function WorkoutForm() {
                 id="calories"
                 type="number"
                 min="0"
+                step="any"
                 value={calories}
                 onChange={(e) => setCalories(e.target.value)}
               />
@@ -427,7 +434,7 @@ function WorkoutForm() {
                 id="distance_km"
                 type="number"
                 min="0"
-                step="0.1"
+                step="any"
                 value={distanceKm}
                 onChange={(e) => setDistanceKm(e.target.value)}
               />
@@ -438,7 +445,7 @@ function WorkoutForm() {
                 id="weight_kg"
                 type="number"
                 min="0"
-                step="0.5"
+                step="any"
                 value={weightKg}
                 onChange={(e) => setWeightKg(e.target.value)}
               />

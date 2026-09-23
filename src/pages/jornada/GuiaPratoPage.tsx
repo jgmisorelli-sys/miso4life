@@ -198,6 +198,7 @@ export function GuiaPratoPage() {
               <Label className="text-xs">Kcal por porção</Label>
               <Input
                 type="number"
+                step="any"
                 value={novoAlimento.kcal}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, kcal: e.target.value })}
               />
@@ -206,6 +207,7 @@ export function GuiaPratoPage() {
               <Label className="text-xs">Proteína (g)</Label>
               <Input
                 type="number"
+                step="any"
                 value={novoAlimento.proteina}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, proteina: e.target.value })}
               />
@@ -214,6 +216,7 @@ export function GuiaPratoPage() {
               <Label className="text-xs">Gordura (g)</Label>
               <Input
                 type="number"
+                step="any"
                 value={novoAlimento.gordura}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, gordura: e.target.value })}
               />
@@ -222,6 +225,7 @@ export function GuiaPratoPage() {
               <Label className="text-xs">Carboidrato (g)</Label>
               <Input
                 type="number"
+                step="any"
                 value={novoAlimento.carboidrato}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, carboidrato: e.target.value })}
               />
@@ -230,6 +234,7 @@ export function GuiaPratoPage() {
               <Label className="text-xs">Fibra (g)</Label>
               <Input
                 type="number"
+                step="any"
                 value={novoAlimento.fibra}
                 onChange={(e) => setNovoAlimento({ ...novoAlimento, fibra: e.target.value })}
               />
@@ -297,6 +302,7 @@ export function GuiaPratoPage() {
               <Label className="text-xs">Duração típica (min)</Label>
               <Input
                 type="number"
+                step="any"
                 value={novoExercicio.duracao}
                 onChange={(e) => setNovoExercicio({ ...novoExercicio, duracao: e.target.value })}
               />
