@@ -61,6 +61,7 @@ function FoodForm() {
   const { alimentos } = useVidaAlimentosCatalogo()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
   const [resetToken, setResetToken] = useState(0)
 
   const [mealType, setMealType] = useState<MealType>('breakfast')
@@ -109,10 +110,11 @@ function FoodForm() {
     if (!foodName) return
     setSaving(true)
     setSaved(false)
+    setErro(null)
     const qtd = Number(portions.replace(',', '.'))
     const quantidadeTexto =
       qtd > 0 && qtd !== 1 ? `${portions.replace('.', ',')} × ${quantity || 'porção'}` : quantity
-    await addFoodLog({
+    const { error } = await addFoodLog({
       meal_type: mealType,
       food_name: foodName,
       quantity: quantidadeTexto || undefined,
@@ -123,6 +125,10 @@ function FoodForm() {
       fiber_g: fiberG ? Number(fiberG) : undefined,
     })
     setSaving(false)
+    if (error) {
+      setErro(error.message)
+      return
+    }
     setSaved(true)
     setFoodName('')
     setQuantity('')
@@ -203,7 +209,7 @@ function FoodForm() {
                 type="number"
                 inputMode="decimal"
                 min="0"
-                step="0.5"
+                step="0.1"
                 value={portions}
                 onChange={(e) => handlePortionsChange(e.target.value)}
               />
@@ -285,6 +291,7 @@ function FoodForm() {
             Salvar refeição
           </Button>
           {saved && <p className="text-sm text-muted-foreground">Registrado!</p>}
+          {erro && <p className="text-sm text-destructive">Não salvou: {erro}</p>}
         </form>
       </CardContent>
       </Card>
@@ -297,6 +304,7 @@ function WorkoutForm() {
   const { exercicios } = useVidaExerciciosCatalogo()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
   const [resetToken, setResetToken] = useState(0)
 
   const [exerciseName, setExerciseName] = useState('')
@@ -321,12 +329,13 @@ function WorkoutForm() {
     if (!exerciseName) return
     setSaving(true)
     setSaved(false)
+    setErro(null)
     // Sem distinção de tipo na tela -- guarda como "aerobic" quando é
     // sobretudo cardio (tem duração/distância) e "strength" quando é
     // sobretudo carga (tem séries/carga), só pra manter o dado coerente
     // no banco. A tela não pede essa escolha ao usuário.
     const workoutType = weightKg || sets ? 'strength' : 'aerobic'
-    await addWorkoutLog({
+    const { error } = await addWorkoutLog({
       workout_type: workoutType,
       exercise_name: exerciseName,
       sets: sets ? Number(sets) : undefined,
@@ -337,6 +346,10 @@ function WorkoutForm() {
       calories: calories ? Number(calories) : undefined,
     })
     setSaving(false)
+    if (error) {
+      setErro(error.message)
+      return
+    }
     setSaved(true)
     setExerciseName('')
     setSets('')
@@ -444,6 +457,7 @@ function WorkoutForm() {
             Salvar treino
           </Button>
           {saved && <p className="text-sm text-muted-foreground">Registrado!</p>}
+          {erro && <p className="text-sm text-destructive">Não salvou: {erro}</p>}
         </form>
       </CardContent>
       </Card>

@@ -44,7 +44,7 @@ export function useWorkoutLogs() {
       distance_km?: number
       calories?: number
     }) => {
-      if (!user) return
+      if (!user) return { error: null }
       const { error } = await supabase.from('workout_logs').insert({ ...entry, user_id: user.id })
       if (!error) await refresh()
       return { error }
@@ -54,7 +54,7 @@ export function useWorkoutLogs() {
 
   const removeWorkoutLog = useCallback(
     async (id: string) => {
-      if (!user) return
+      if (!user) return { error: null }
       const { error } = await supabase.from('workout_logs').delete().eq('id', id)
       if (!error) await refresh()
       return { error }
